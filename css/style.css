@@ -1655,9 +1655,13 @@ img {
 
 /* DNN Layers Scrollable Config */
 .dnn-layers-scroll {
-  max-height: 200px;
+  max-height: 40vh;
+  min-height: 150px;
   overflow-y: auto;
   scrollbar-width: thin;
+  flex-shrink: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
 }
 
 /* DNN Layer Item with Activation Dropdown */
@@ -1736,53 +1740,99 @@ img {
   display: flex;
 }
 
-/* DNN Training Status Cards */
-.dnn-training-status {
-  padding: 1.5rem;
-}
-
-.dnn-status-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+/* DNN Top Bar (Controls + Status) */
+.dnn-top-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.dnn-status-card {
+  padding: 0.6rem 1rem;
   background: var(--bg-card);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.dnn-top-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-sm {
+  padding: 0.35rem 0.8rem !important;
+  font-size: 0.8rem !important;
+  min-width: auto !important;
+  gap: 0.3rem !important;
+}
+
+/* Mini Status Indicators */
+.dnn-top-status {
+  display: flex;
+  gap: 0.8rem;
+  margin-right: auto;
+}
+
+.dnn-mini-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--bg-surface);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
-  padding: 1rem;
-  text-align: center;
-  transition: var(--transition);
-}
-
-.dnn-status-card:hover {
-  border-color: #E040FB;
-  box-shadow: 0 0 15px rgba(224, 64, 251, 0.2);
-}
-
-.dnn-status-label {
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
   font-size: 0.75rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 0.5rem;
-  font-family: var(--font-mono);
 }
 
-.dnn-status-value {
+.dnn-mini-label {
+  color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dnn-mini-value {
   color: var(--accent);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.dnn-top-progress {
+  width: 100%;
+  flex-basis: 100%;
+}
+
+/* Pass Direction Indicator */
+.dnn-pass-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  animation: passGlow 0.8s ease-in-out infinite alternate;
+}
+
+.dnn-pass-indicator.forward {
+  background: rgba(0, 230, 118, 0.15);
+  border: 1px solid rgba(0, 230, 118, 0.4);
+  color: #00E676;
+}
+
+.dnn-pass-indicator.backward {
+  background: rgba(255, 82, 82, 0.15);
+  border: 1px solid rgba(255, 82, 82, 0.4);
+  color: #FF5252;
+}
+
+@keyframes passGlow {
+  0% { opacity: 0.7; }
+  100% { opacity: 1; }
 }
 
 /* DNN Progress */
-.dnn-progress-section {
-  padding: 0 0.5rem;
-}
-
 .dnn-train-progress {
   background: linear-gradient(135deg, #E040FB, #6C63FF) !important;
   transition: width 0.3s ease;
@@ -1801,16 +1851,6 @@ img {
   height: 100% !important;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
-}
-
-/* DNN Training Controls */
-.dnn-train-controls {
-  display: flex;
-  gap: 1rem;
-  padding: 1.5rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  border-top: 1px solid var(--glass-border);
 }
 
 /* DNN Config Panel */

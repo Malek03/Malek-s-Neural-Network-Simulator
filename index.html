@@ -325,6 +325,48 @@
                     <div class="workspace-content">
                         <!-- Architecture Tab -->
                         <div class="dnn-tab-content active" id="dnn-arch-tab">
+                            <!-- Training Controls Bar (top) -->
+                            <div class="dnn-top-bar">
+                                <div class="dnn-top-controls">
+                                    <button class="btn btn-primary btn-sm" id="dnn-btn-train">
+                                        <i class="fas fa-play"></i> بدء التدريب
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" id="dnn-btn-stop" disabled>
+                                        <i class="fas fa-stop"></i> إيقاف
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="dnn-btn-reset">
+                                        <i class="fas fa-redo"></i> إعادة تهيئة
+                                    </button>
+                                </div>
+                                <div class="dnn-top-status" id="dnn-training-status">
+                                    <div class="dnn-mini-stat">
+                                        <span class="dnn-mini-label">Epoch</span>
+                                        <span class="dnn-mini-value" id="dnn-epoch-display">0/0</span>
+                                    </div>
+                                    <div class="dnn-mini-stat">
+                                        <span class="dnn-mini-label">Loss</span>
+                                        <span class="dnn-mini-value" id="dnn-loss-display">—</span>
+                                    </div>
+                                    <div class="dnn-mini-stat">
+                                        <span class="dnn-mini-label">Acc</span>
+                                        <span class="dnn-mini-value" id="dnn-acc-display">—</span>
+                                    </div>
+                                    <div class="dnn-mini-stat">
+                                        <span class="dnn-mini-label">Opt</span>
+                                        <span class="dnn-mini-value" id="dnn-opt-display">—</span>
+                                    </div>
+                                </div>
+                                <div class="dnn-top-progress">
+                                    <div class="comp-progress-bar" style="height: 4px;">
+                                        <div class="comp-progress-fill dnn-train-progress" id="dnn-train-progress" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <!-- Pass Direction Indicator -->
+                                <div class="dnn-pass-indicator" id="dnn-pass-indicator" style="display:none;">
+                                    <span id="dnn-pass-label"></span>
+                                </div>
+                            </div>
+                            
                             <div class="network-canvas-wrapper">
                                 <canvas id="dnn-network-canvas"></canvas>
                             </div>
@@ -341,52 +383,11 @@
                             </div>
                         </div>
                         
-                        <!-- Training Tab -->
+                        <!-- Training Tab (Loss Chart) -->
                         <div class="dnn-tab-content" id="dnn-train-tab">
-                            <!-- Training Status -->
-                            <div class="dnn-training-status" id="dnn-training-status">
-                                <div class="dnn-status-cards">
-                                    <div class="dnn-status-card">
-                                        <div class="dnn-status-label">Epoch</div>
-                                        <div class="dnn-status-value" id="dnn-epoch-display">0 / 0</div>
-                                    </div>
-                                    <div class="dnn-status-card">
-                                        <div class="dnn-status-label">Loss</div>
-                                        <div class="dnn-status-value" id="dnn-loss-display">—</div>
-                                    </div>
-                                    <div class="dnn-status-card">
-                                        <div class="dnn-status-label">Accuracy</div>
-                                        <div class="dnn-status-value" id="dnn-acc-display">—</div>
-                                    </div>
-                                    <div class="dnn-status-card">
-                                        <div class="dnn-status-label">Optimizer</div>
-                                        <div class="dnn-status-value" id="dnn-opt-display">—</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="dnn-progress-section">
-                                    <div class="comp-progress-bar" style="height: 6px;">
-                                        <div class="comp-progress-fill dnn-train-progress" id="dnn-train-progress" style="width: 0%;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            
                             <!-- Loss Chart -->
-                            <div class="dnn-chart-container">
+                            <div class="dnn-chart-container" style="flex:1; height:auto;">
                                 <canvas id="dnn-loss-chart"></canvas>
-                            </div>
-                            
-                            <!-- Training Controls -->
-                            <div class="dnn-train-controls">
-                                <button class="btn btn-primary" id="dnn-btn-train">
-                                    <i class="fas fa-play"></i> بدء التدريب
-                                </button>
-                                <button class="btn btn-danger" id="dnn-btn-stop" disabled>
-                                    <i class="fas fa-stop"></i> إيقاف
-                                </button>
-                                <button class="btn btn-secondary" id="dnn-btn-reset">
-                                    <i class="fas fa-redo"></i> إعادة تهيئة
-                                </button>
                             </div>
                         </div>
                     </div>

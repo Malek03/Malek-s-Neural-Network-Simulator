@@ -383,4 +383,173 @@ class NetworkRenderer {
     }
     this.draw();
   }
+
+  /**
+   * Animate forward pass — reveal values layer by layer (input → output)
+   * @param {Array<Array<number>>} layerOutputs - values for each layer
+   * @param {number} delayMs - delay between layers in ms
+   * @returns {Promise} resolves when animation is complete
+   */
+  animateForwardPass(layerOutputs, delayMs = 150) {
+    return new Promise(resolve => {
+      // Clear all values first
+      this.nodes.forEach(n => n.value = null);
+      this.activeLayer = -1;
+      this.passDirection = 'forward';
+      this.draw();
+
+      let layerIdx = 0;
+      const totalLayers = layerOutputs.length;
+
+      const step = () => {
+        if (layerIdx >= totalLayers) {
+          this.activeLayer = -1;
+          this.passDirection = null;
+          this.draw();
+          resolve();
+          return;
+        }
+
+        // Set values for this layer
+        let nodeOffset = 0;
+        for (let l = 0; l < layerIdx; l++) {
+          nodeOffset += this.network.layers[l];
+        }
+        for (let i = 0; i < layerOutputs[layerIdx].length; i++) {
+          if (this.nodes[nodeOffset + i]) {
+            this.nodes[nodeOffset + i].value = layerOutputs[layerIdx][i];
+          }
+        }
+
+        this.activeLayer = layerIdx;
+        this.draw();
+
+        layerIdx++;
+        setTimeout(step, delayMs);
+      };
+
+      step();
+    });
+  }
+
+  /**
+   * Animate backward pass — reveal gradient/error values layer by layer (output → input)
+   * @param {Array<Array<number>>} layerGradients - gradient values for each layer
+   * @param {number} delayMs - delay between layers in ms
+   * @returns {Promise} resolves when animation is complete
+   */
+  animateBackwardPass(layerGradients, delayMs = 150) {
+    return new Promise(resolve => {
+      // Clear all values first
+      this.nodes.forEach(n => n.value = null);
+      this.activeLayer = -1;
+      this.passDirection = 'backward';
+      this.draw();
+
+      const totalLayers = layerGradients.length;
+      let step_i = 0;
+
+      const step = () => {
+        if (step_i >= totalLayers) {
+          this.activeLayer = -1;
+          this.passDirection = null;
+          this.draw();
+          resolve();
+          return;
+        }
+
+        // Reverse: start from output, go to input
+        const layerIdx = totalLayers - 1 - step_i;
+
+        let nodeOffset = 0;
+        for (let l = 0; l < layerIdx; l++) {
+          nodeOffset += this.network.layers[l];
+        }
+        for (let i = 0; i < layerGradients[layerIdx].length; i++) {
+          if (this.nodes[nodeOffset + i]) {
+            this.nodes[nodeOffset + i].value = layerGradients[layerIdx][i];
+          }
+        }
+
+        this.activeLayer = layerIdx;
+        this.draw();
+
+        step_i++;
+        setTimeout(step, delayMs);
+      };
+
+      step();
+    });
+  }
+
+  /**
+   * Override draw to show active layer glow during pass animation
+   */
+  drawNode(node) {
+    const ctx = this.ctx;
+    const r = node.radius;
+    const isActive = this.activeNode &&
+      this.activeNode.layer === node.layer &&
+      this.activeNode.index === node.index;
+    const isActiveLayer = this.activeLayer === node.layer;
+
+    // Active layer glow during pass animation
+    if (isActiveLayer) {
+      const glowColor = this.passDirection === 'backward' ? 'rgba(255, 82, 82,' : 'rgba(0, 230, 118,';
+      const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, r * 3.5);
+      gradient.addColorStop(0, glowColor + '0.5)');
+      gradient.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, r * 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    }
+
+    // Glow effect for individually active node
+    if (isActive) {
+      const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, r * 3);
+      gradient.addColorStop(0, node.color + '40');
+      gradient.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, r * 3, 0, Math.PI * 2);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    }
+
+    // Outer ring
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r + 2, 0, Math.PI * 2);
+    ctx.fillStyle = (isActive || isActiveLayer) ? node.color + '60' : node.color + '20';
+    ctx.fill();
+
+    // Main circle
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(node.x - r * 0.3, node.y - r * 0.3, 0, node.x, node.y, r);
+    grad.addColorStop(0, node.color);
+    grad.addColorStop(1, this.darkenColor(node.color, 0.5));
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.strokeStyle = isActiveLayer
+      ? (this.passDirection === 'backward' ? '#FF5252' : '#00E676')
+      : (isActive ? '#fff' : node.color + '80');
+    ctx.lineWidth = (isActive || isActiveLayer) ? 2 : 1;
+    ctx.stroke();
+
+    // Value label
+    if (node.value !== null && node.value !== undefined) {
+      ctx.save();
+      ctx.font = `bold ${Math.max(8, r * 0.6)}px JetBrains Mono`;
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(
+        typeof node.value === 'number' ? node.value.toFixed(2) : node.value,
+        node.x,
+        node.y
+      );
+      ctx.restore();
+    }
+  }
 }
