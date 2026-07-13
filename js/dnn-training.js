@@ -200,7 +200,7 @@ class DNNTrainer {
           const idx = indices[s];
           const result = this.builder.backpropagate(features[idx], labels[idx]);
 
-          if (epoch === 0 && b === 0 && s === batchStart && this.onPassAnimation) {
+          if (b === 0 && s === batchStart && this.onPassAnimation) {
             await this.onPassAnimation(result.layerOutputs, result.deltas);
           }
 
