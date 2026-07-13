@@ -460,9 +460,13 @@ class NetworkRenderer {
 
         // Reverse: start from output, go to input
         const layerIdx = totalLayers - 1 - step_i;
+        
+        // layerGradients (deltas) has length L, but network.layers has length L + 1.
+        // So layerIdx in layerGradients corresponds to layerIdx + 1 in network.layers.
+        const targetNetworkLayer = layerIdx + 1;
 
         let nodeOffset = 0;
-        for (let l = 0; l < layerIdx; l++) {
+        for (let l = 0; l < targetNetworkLayer; l++) {
           nodeOffset += this.network.layers[l];
         }
         for (let i = 0; i < layerGradients[layerIdx].length; i++) {
@@ -471,7 +475,7 @@ class NetworkRenderer {
           }
         }
 
-        this.activeLayer = layerIdx;
+        this.activeLayer = targetNetworkLayer;
         this.draw();
 
         step_i++;
