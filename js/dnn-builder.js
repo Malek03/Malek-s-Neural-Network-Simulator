@@ -263,7 +263,9 @@ class DNNBuilder {
       loss: parseFloat(loss.toFixed(6)),
       prediction: ff.prediction,
       weightGradients,
-      biasGradients
+      biasGradients,
+      layerOutputs,
+      deltas
     };
   }
 

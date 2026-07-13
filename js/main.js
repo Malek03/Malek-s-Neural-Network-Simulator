@@ -533,12 +533,6 @@ function initDNNSimulator() {
 
     if (!dnnTrainer || dnnTrainer.isTraining) return;
 
-    // Switch to training tab
-    tabs.forEach(t => t.classList.remove('active'));
-    tabs[1].classList.add('active');
-    archTab.classList.remove('active');
-    trainTab.classList.add('active');
-
     trainBtn.disabled = true;
     stopBtn.disabled = false;
 
@@ -546,6 +540,33 @@ function initDNNSimulator() {
     statusEl.classList.add('dnn-training-active');
 
     document.getElementById('dnn-opt-display').innerText = dnnBuilder.config.optimizer.toUpperCase();
+
+    // Hook up animation for the first sample pass
+    dnnTrainer.onPassAnimation = async (layerOutputs, deltas) => {
+      const passIndicator = document.getElementById('dnn-pass-indicator');
+      const passLabel = document.getElementById('dnn-pass-label');
+      
+      if (passIndicator && passLabel) {
+        passIndicator.style.display = 'flex';
+        passIndicator.className = 'dnn-pass-indicator forward';
+        passLabel.innerText = 'إنتشار أمامي (Forward Pass)';
+      }
+      
+      await dnnRenderer.animateForwardPass(layerOutputs, 200);
+      
+      if (passIndicator && passLabel) {
+        passIndicator.className = 'dnn-pass-indicator backward';
+        passLabel.innerText = 'إنتشار خلفي (Backward Pass)';
+      }
+      
+      await dnnRenderer.animateBackwardPass(deltas, 200);
+      
+      if (passIndicator) {
+        passIndicator.style.display = 'none';
+      }
+      
+      dnnRenderer.setAllValues(layerOutputs);
+    };
 
     dnnTrainer.onEpochEnd = (epoch, loss, accuracy) => {
       const totalEpochs = dnnBuilder.config.epochs;
@@ -585,11 +606,7 @@ function initDNNSimulator() {
     }
     // Rebuild network with fresh weights
     if (dnnBuilder.isBuilt) {
-      const network = dnnBuilder.build();
-      dnnRenderer.render(network, true);
-      const dataContainer = document.getElementById('dnn-data-table-container');
-      dataContainer.innerHTML = dnnBuilder.renderDataTable();
-      dnnTrainer = new DNNTrainer(dnnBuilder);
+      dnnBuildBtn.click();
     }
     resetTrainingUI();
   });
@@ -612,4 +629,7 @@ function initDNNSimulator() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
   }
+
+  // Automatically build the initial network so the data table populates
+  setTimeout(() => dnnBuildBtn.click(), 100);
 }
