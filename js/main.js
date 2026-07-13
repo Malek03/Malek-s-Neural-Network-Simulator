@@ -373,6 +373,12 @@ function initDNNSimulator() {
       } else {
         trainTab.classList.add('active');
         archTab.classList.remove('active');
+        
+        // The canvas was hidden (display:none) so its width/height were 0.
+        // We must redraw it now that it's visible to get correct dimensions.
+        if (dnnTrainer && dnnTrainer.history && dnnTrainer.history.loss.length > 0) {
+          DNNTrainer.drawLossChart('dnn-loss-chart', dnnTrainer.history);
+        }
       }
     });
   });

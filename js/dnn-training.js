@@ -254,7 +254,8 @@ class DNNTrainer {
 
   static drawLossChart(canvasId, history) {
     const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
+    if (!canvas || canvas.clientWidth === 0) return;
+    
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
 
