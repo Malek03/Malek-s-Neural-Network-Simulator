@@ -55,6 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 5. Simulator Initialization
   initSimulator();
+
+  // 6. DNN Simulator Initialization
+  initDNNSimulator();
 });
 
 function initBioCanvas() {
@@ -325,4 +328,288 @@ function initSimulator() {
   document.getElementById('bp-prev-btn').addEventListener('click', () => bpUI.prev());
   document.getElementById('bp-play-btn').addEventListener('click', () => bpUI.togglePlay());
   document.getElementById('close-bp').addEventListener('click', () => bpUI.close());
+}
+
+function initDNNSimulator() {
+  const dnnCard = document.getElementById('dnn-card');
+  const dnnOverlay = document.getElementById('dnn-simulator-overlay');
+  const dnnCloseBtn = document.getElementById('dnn-close-sim');
+  const dnnBuildBtn = document.getElementById('dnn-btn-build');
+
+  if (!dnnCard || !dnnOverlay) return;
+
+  const dnnBuilder = new DNNBuilder();
+  const dnnRenderer = new NetworkRenderer('dnn-network-canvas');
+  let dnnTrainer = null;
+
+  // ── Open/Close DNN Simulator ──
+  dnnCard.addEventListener('click', () => {
+    dnnOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    updateDNNConfigUI();
+  });
+
+  dnnCloseBtn.addEventListener('click', () => {
+    dnnOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+    if (dnnTrainer && dnnTrainer.isTraining) {
+      dnnTrainer.stop();
+    }
+  });
+
+  // ── Tab Switching ──
+  const tabs = dnnOverlay.querySelectorAll('.workspace-tab');
+  const archTab = document.getElementById('dnn-arch-tab');
+  const trainTab = document.getElementById('dnn-train-tab');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      if (tab.dataset.tab === 'arch') {
+        archTab.classList.add('active');
+        trainTab.classList.remove('active');
+      } else {
+        trainTab.classList.add('active');
+        archTab.classList.remove('active');
+      }
+    });
+  });
+
+  // ── Config Controls ──
+  const inputsSlider = document.getElementById('dnn-config-inputs');
+  const inputsVal = document.getElementById('dnn-val-inputs');
+  const layersSlider = document.getElementById('dnn-config-layers');
+  const layersVal = document.getElementById('dnn-val-layers');
+  const hiddenConfig = document.getElementById('dnn-hidden-layers-config');
+  const outputTypeSelect = document.getElementById('dnn-output-type');
+  const classesGroup = document.getElementById('dnn-classes-group');
+  const classesSlider = document.getElementById('dnn-config-classes');
+  const classesVal = document.getElementById('dnn-val-classes');
+  const optimizerSelect = document.getElementById('dnn-optimizer');
+  const lrSlider = document.getElementById('dnn-config-lr');
+  const lrVal = document.getElementById('dnn-val-lr');
+  const epochsSlider = document.getElementById('dnn-config-epochs');
+  const epochsVal = document.getElementById('dnn-val-epochs');
+  const batchSlider = document.getElementById('dnn-config-batch');
+  const batchVal = document.getElementById('dnn-val-batch');
+
+  inputsSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    inputsVal.innerText = val;
+    dnnBuilder.setInputNodes(val);
+  });
+
+  layersSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    layersVal.innerText = val;
+    dnnBuilder.setHiddenLayerCount(val);
+    updateHiddenLayersUI();
+  });
+
+  outputTypeSelect.addEventListener('change', (e) => {
+    dnnBuilder.setOutputType(e.target.value);
+    classesGroup.style.display = e.target.value === 'multiclass' ? 'flex' : 'none';
+  });
+
+  classesSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    classesVal.innerText = val;
+    dnnBuilder.setOutputClasses(val);
+  });
+
+  optimizerSelect.addEventListener('change', (e) => {
+    dnnBuilder.setOptimizer(e.target.value);
+  });
+
+  lrSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value) / 1000;
+    lrVal.innerText = val.toFixed(4);
+    dnnBuilder.setLearningRate(val);
+  });
+
+  epochsSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    epochsVal.innerText = val;
+    dnnBuilder.setEpochs(val);
+  });
+
+  batchSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    batchVal.innerText = val;
+    dnnBuilder.setBatchSize(val);
+  });
+
+  function updateHiddenLayersUI() {
+    hiddenConfig.innerHTML = '';
+    const layers = dnnBuilder.config.hiddenLayers;
+    const activations = dnnBuilder.config.activations;
+
+    layers.forEach((nodes, idx) => {
+      const div = document.createElement('div');
+      div.className = 'dnn-layer-config-item';
+      div.innerHTML = `
+        <div class="dnn-layer-config-row">
+          <label>طبقة ${idx + 1}</label>
+          <input type="range" class="config-slider" min="1" max="20" value="${nodes}" data-idx="${idx}">
+          <span class="config-value">${nodes}</span>
+        </div>
+        <div class="dnn-layer-config-row">
+          <label>التفعيل</label>
+          <select data-idx="${idx}">
+            <option value="relu" ${activations[idx] === 'relu' ? 'selected' : ''}>ReLU</option>
+            <option value="sigmoid" ${activations[idx] === 'sigmoid' ? 'selected' : ''}>Sigmoid</option>
+            <option value="tanh" ${activations[idx] === 'tanh' ? 'selected' : ''}>Tanh</option>
+            <option value="leaky_relu" ${activations[idx] === 'leaky_relu' ? 'selected' : ''}>Leaky ReLU</option>
+          </select>
+        </div>
+      `;
+      hiddenConfig.appendChild(div);
+
+      const slider = div.querySelector('input[type="range"]');
+      const valSpan = div.querySelector('.config-value');
+      slider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        valSpan.innerText = val;
+        dnnBuilder.setHiddenLayerNodes(idx, val);
+      });
+
+      const actSelect = div.querySelector('select');
+      actSelect.addEventListener('change', (e) => {
+        dnnBuilder.setLayerActivation(idx, e.target.value);
+      });
+    });
+  }
+
+  function updateDNNConfigUI() {
+    inputsSlider.value = dnnBuilder.config.inputNodes;
+    inputsVal.innerText = dnnBuilder.config.inputNodes;
+    layersSlider.value = dnnBuilder.config.hiddenLayers.length;
+    layersVal.innerText = dnnBuilder.config.hiddenLayers.length;
+    outputTypeSelect.value = dnnBuilder.config.outputType;
+    classesGroup.style.display = dnnBuilder.config.outputType === 'multiclass' ? 'flex' : 'none';
+    classesSlider.value = dnnBuilder.config.outputClasses;
+    classesVal.innerText = dnnBuilder.config.outputClasses;
+    optimizerSelect.value = dnnBuilder.config.optimizer;
+    const lrDisplay = dnnBuilder.config.learningRate;
+    lrSlider.value = Math.round(lrDisplay * 1000);
+    lrVal.innerText = lrDisplay.toFixed(4);
+    epochsSlider.value = dnnBuilder.config.epochs;
+    epochsVal.innerText = dnnBuilder.config.epochs;
+    batchSlider.value = dnnBuilder.config.batchSize;
+    batchVal.innerText = dnnBuilder.config.batchSize;
+    updateHiddenLayersUI();
+  }
+
+  // ── Build Network ──
+  dnnBuildBtn.addEventListener('click', () => {
+    const network = dnnBuilder.build();
+
+    // Render network on canvas (reuse NetworkRenderer with custom network object)
+    dnnRenderer.render(network, true);
+
+    // Render data table
+    const dataContainer = document.getElementById('dnn-data-table-container');
+    dataContainer.innerHTML = dnnBuilder.renderDataTable();
+
+    // Reset training state
+    resetTrainingUI();
+
+    // Create trainer
+    dnnTrainer = new DNNTrainer(dnnBuilder);
+  });
+
+  // ── Training Controls ──
+  const trainBtn = document.getElementById('dnn-btn-train');
+  const stopBtn = document.getElementById('dnn-btn-stop');
+  const resetBtn = document.getElementById('dnn-btn-reset');
+
+  trainBtn.addEventListener('click', async () => {
+    if (!dnnBuilder.isBuilt) {
+      alert('الرجاء بناء الشبكة أولاً');
+      return;
+    }
+
+    if (!dnnTrainer || dnnTrainer.isTraining) return;
+
+    // Switch to training tab
+    tabs.forEach(t => t.classList.remove('active'));
+    tabs[1].classList.add('active');
+    archTab.classList.remove('active');
+    trainTab.classList.add('active');
+
+    trainBtn.disabled = true;
+    stopBtn.disabled = false;
+
+    const statusEl = document.getElementById('dnn-training-status');
+    statusEl.classList.add('dnn-training-active');
+
+    document.getElementById('dnn-opt-display').innerText = dnnBuilder.config.optimizer.toUpperCase();
+
+    dnnTrainer.onEpochEnd = (epoch, loss, accuracy) => {
+      const totalEpochs = dnnBuilder.config.epochs;
+      document.getElementById('dnn-epoch-display').innerText = `${epoch + 1} / ${totalEpochs}`;
+      document.getElementById('dnn-loss-display').innerText = loss.toFixed(4);
+      document.getElementById('dnn-acc-display').innerText = (accuracy * 100).toFixed(1) + '%';
+      document.getElementById('dnn-train-progress').style.width = `${((epoch + 1) / totalEpochs) * 100}%`;
+
+      // Update chart every few epochs to avoid too many redraws
+      if (epoch % Math.max(1, Math.floor(totalEpochs / 100)) === 0 || epoch === totalEpochs - 1) {
+        DNNTrainer.drawLossChart('dnn-loss-chart', dnnTrainer.history);
+      }
+    };
+
+    dnnTrainer.onTrainingEnd = (history) => {
+      trainBtn.disabled = false;
+      stopBtn.disabled = true;
+      statusEl.classList.remove('dnn-training-active');
+      DNNTrainer.drawLossChart('dnn-loss-chart', history);
+    };
+
+    await dnnTrainer.train();
+  });
+
+  stopBtn.addEventListener('click', () => {
+    if (dnnTrainer) {
+      dnnTrainer.stop();
+    }
+    trainBtn.disabled = false;
+    stopBtn.disabled = true;
+    document.getElementById('dnn-training-status').classList.remove('dnn-training-active');
+  });
+
+  resetBtn.addEventListener('click', () => {
+    if (dnnTrainer && dnnTrainer.isTraining) {
+      dnnTrainer.stop();
+    }
+    // Rebuild network with fresh weights
+    if (dnnBuilder.isBuilt) {
+      const network = dnnBuilder.build();
+      dnnRenderer.render(network, true);
+      const dataContainer = document.getElementById('dnn-data-table-container');
+      dataContainer.innerHTML = dnnBuilder.renderDataTable();
+      dnnTrainer = new DNNTrainer(dnnBuilder);
+    }
+    resetTrainingUI();
+  });
+
+  function resetTrainingUI() {
+    document.getElementById('dnn-epoch-display').innerText = '0 / 0';
+    document.getElementById('dnn-loss-display').innerText = '—';
+    document.getElementById('dnn-acc-display').innerText = '—';
+    document.getElementById('dnn-opt-display').innerText = '—';
+    document.getElementById('dnn-train-progress').style.width = '0%';
+    document.getElementById('dnn-training-status').classList.remove('dnn-training-active');
+
+    trainBtn.disabled = false;
+    stopBtn.disabled = true;
+
+    // Clear chart
+    const canvas = document.getElementById('dnn-loss-chart');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
 }

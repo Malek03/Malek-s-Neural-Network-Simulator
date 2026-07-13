@@ -1599,6 +1599,250 @@ img {
     flex-direction: column;
     gap: 1rem;
   }
+  .dnn-status-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dnn-chart-container {
+    height: 250px;
+  }
+  .dnn-train-controls {
+    flex-direction: column;
+  }
+  .dnn-train-controls .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── DNN Simulator Styles ── */
+.card-icon.dnn { background: rgba(224, 64, 251, 0.15); color: #E040FB; }
+
+/* DNN Select Dropdown */
+.dnn-select {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23A0A3BD'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 10px center;
+}
+
+.dnn-select:hover {
+  border-color: #E040FB;
+}
+
+.dnn-select:focus {
+  border-color: #E040FB;
+  box-shadow: 0 0 10px rgba(224, 64, 251, 0.3);
+}
+
+.dnn-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 0.5rem;
+}
+
+/* DNN Layers Scrollable Config */
+.dnn-layers-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* DNN Layer Item with Activation Dropdown */
+.dnn-layer-config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(108, 99, 255, 0.08);
+}
+
+.dnn-layer-config-item:last-child {
+  border-bottom: none;
+}
+
+.dnn-layer-config-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dnn-layer-config-row label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 50px;
+}
+
+.dnn-layer-config-row .config-slider {
+  flex: 1;
+}
+
+.dnn-layer-config-row .config-value {
+  min-width: 22px;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.dnn-layer-config-row select {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-darker);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='%236B6F8D'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 6px center;
+}
+
+.dnn-layer-config-row select:focus {
+  border-color: #E040FB;
+}
+
+.dnn-layer-config-row select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* DNN Tab System */
+.dnn-tab-content {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: auto;
+}
+
+.dnn-tab-content.active {
+  display: flex;
+}
+
+/* DNN Training Status Cards */
+.dnn-training-status {
+  padding: 1.5rem;
+}
+
+.dnn-status-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.dnn-status-card {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.dnn-status-card:hover {
+  border-color: #E040FB;
+  box-shadow: 0 0 15px rgba(224, 64, 251, 0.2);
+}
+
+.dnn-status-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-mono);
+}
+
+.dnn-status-value {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* DNN Progress */
+.dnn-progress-section {
+  padding: 0 0.5rem;
+}
+
+.dnn-train-progress {
+  background: linear-gradient(135deg, #E040FB, #6C63FF) !important;
+  transition: width 0.3s ease;
+}
+
+/* DNN Loss Chart */
+.dnn-chart-container {
+  width: 100%;
+  height: 350px;
+  padding: 1.5rem;
+  position: relative;
+}
+
+.dnn-chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+}
+
+/* DNN Training Controls */
+.dnn-train-controls {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--glass-border);
+}
+
+/* DNN Config Panel */
+.dnn-config-panel {
+  overflow-y: auto;
+}
+
+/* DNN Build Button Gradient */
+.dnn-build-btn {
+  background: linear-gradient(135deg, #E040FB, #6C63FF) !important;
+  box-shadow: 0 4px 15px rgba(224, 64, 251, 0.4) !important;
+}
+
+.dnn-build-btn:hover {
+  box-shadow: 0 6px 25px rgba(224, 64, 251, 0.5) !important;
+}
+
+/* DNN Card Active State */
+#dnn-card.active,
+#dnn-card:hover {
+  border-color: #E040FB;
+  box-shadow: 0 0 30px rgba(224, 64, 251, 0.3);
+}
+
+/* Training Animation */
+@keyframes trainPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.dnn-training-active .dnn-status-value {
+  animation: trainPulse 1s infinite;
 }
 
 /* ── Utility Classes ── */

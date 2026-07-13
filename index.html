@@ -226,6 +226,19 @@
                 </div>
             </div>
             
+            <!-- DNN -->
+            <div class="network-card" id="dnn-card">
+                <div class="card-icon dnn">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3 class="card-title">شبكة عصبية عميقة</h3>
+                <div class="card-subtitle">Deep Neural Network (DNN)</div>
+                <p class="card-desc">شبكة متعددة الطبقات مع دعم حتى 20 طبقة و20 خلية عصبية. يمكنك اختيار دالة التفعيل لكل طبقة، ونوع المخرج (ثنائي أو متعدد)، والمحسّن، وتدريب الشبكة فعلياً مع عرض منحنى الخطأ.</p>
+                <div class="card-status available">
+                    <i class="fas fa-check-circle"></i> متاح للمحاكاة
+                </div>
+            </div>
+            
             <!-- CNN -->
             <div class="network-card locked">
                 <div class="card-icon cnn">
@@ -284,6 +297,197 @@
     <footer class="footer">
         <p class="footer-text">تم تطوير محاكي الشبكات العصبية لأغراض تعليمية بواسطة م/مالك المصنف. &copy; 2026</p>
     </footer>
+
+    <!-- ========================================== -->
+    <!-- DNN SIMULATOR OVERLAY -->
+    <!-- ========================================== -->
+    <div class="simulator-overlay" id="dnn-simulator-overlay">
+        <div class="simulator-container">
+            <!-- Header -->
+            <div class="simulator-header">
+                <div class="simulator-title">
+                    <i class="fas fa-brain" style="color: #E040FB"></i> 
+                    محاكي الشبكة العصبية العميقة (DNN)  Eng:Malek Almosanif
+                </div>
+                <button class="simulator-close" id="dnn-close-sim"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <!-- Body -->
+            <div class="simulator-body">
+                
+                <!-- Main Workspace -->
+                <div class="workspace">
+                    <div class="workspace-tabs">
+                        <button class="workspace-tab active" data-tab="arch">هيكلية الشبكة</button>
+                        <button class="workspace-tab" data-tab="train">التدريب والنتائج</button>
+                    </div>
+                    
+                    <div class="workspace-content">
+                        <!-- Architecture Tab -->
+                        <div class="dnn-tab-content active" id="dnn-arch-tab">
+                            <div class="network-canvas-wrapper">
+                                <canvas id="dnn-network-canvas"></canvas>
+                            </div>
+                            
+                            <div class="data-table-section" id="dnn-data-table-section">
+                                <div class="data-table-header">
+                                    <div class="data-table-title">
+                                        <i class="fas fa-table" style="color: var(--accent)"></i> مجموعة بيانات التدريب
+                                    </div>
+                                </div>
+                                <div class="data-table-wrapper" id="dnn-data-table-container">
+                                    <p style="padding: 2rem; text-align:center; color: var(--text-muted)">قم ببناء الشبكة لتوليد البيانات...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Training Tab -->
+                        <div class="dnn-tab-content" id="dnn-train-tab">
+                            <!-- Training Status -->
+                            <div class="dnn-training-status" id="dnn-training-status">
+                                <div class="dnn-status-cards">
+                                    <div class="dnn-status-card">
+                                        <div class="dnn-status-label">Epoch</div>
+                                        <div class="dnn-status-value" id="dnn-epoch-display">0 / 0</div>
+                                    </div>
+                                    <div class="dnn-status-card">
+                                        <div class="dnn-status-label">Loss</div>
+                                        <div class="dnn-status-value" id="dnn-loss-display">—</div>
+                                    </div>
+                                    <div class="dnn-status-card">
+                                        <div class="dnn-status-label">Accuracy</div>
+                                        <div class="dnn-status-value" id="dnn-acc-display">—</div>
+                                    </div>
+                                    <div class="dnn-status-card">
+                                        <div class="dnn-status-label">Optimizer</div>
+                                        <div class="dnn-status-value" id="dnn-opt-display">—</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="dnn-progress-section">
+                                    <div class="comp-progress-bar" style="height: 6px;">
+                                        <div class="comp-progress-fill dnn-train-progress" id="dnn-train-progress" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Loss Chart -->
+                            <div class="dnn-chart-container">
+                                <canvas id="dnn-loss-chart"></canvas>
+                            </div>
+                            
+                            <!-- Training Controls -->
+                            <div class="dnn-train-controls">
+                                <button class="btn btn-primary" id="dnn-btn-train">
+                                    <i class="fas fa-play"></i> بدء التدريب
+                                </button>
+                                <button class="btn btn-danger" id="dnn-btn-stop" disabled>
+                                    <i class="fas fa-stop"></i> إيقاف
+                                </button>
+                                <button class="btn btn-secondary" id="dnn-btn-reset">
+                                    <i class="fas fa-redo"></i> إعادة تهيئة
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Config Panel (Right Sidebar) -->
+                <div class="config-panel dnn-config-panel">
+                    <div style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-sliders-h" style="color: #E040FB"></i> إعدادات الشبكة العميقة
+                    </div>
+                    
+                    <!-- Input Nodes -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            عدد عقد الإدخال (Features)
+                            <span class="config-value" id="dnn-val-inputs">2</span>
+                        </div>
+                        <input type="range" class="config-slider" id="dnn-config-inputs" min="1" max="20" value="2">
+                    </div>
+                    
+                    <!-- Hidden Layers -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            عدد الطبقات المخفية
+                            <span class="config-value" id="dnn-val-layers">2</span>
+                        </div>
+                        <input type="range" class="config-slider" id="dnn-config-layers" min="1" max="20" value="2">
+                    </div>
+                    
+                    <!-- Per-layer config -->
+                    <div class="hidden-layers-config dnn-layers-scroll" id="dnn-hidden-layers-config">
+                        <!-- Populated by JS -->
+                    </div>
+                    
+                    <div class="config-divider"></div>
+                    
+                    <!-- Output Type -->
+                    <div class="config-group">
+                        <div class="config-label">نوع المخرج (Output)</div>
+                        <select class="dnn-select" id="dnn-output-type">
+                            <option value="binary">Binary (تصنيف ثنائي)</option>
+                            <option value="multiclass">Multi-class (متعدد الأصناف)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Output Classes (shown when multiclass) -->
+                    <div class="config-group" id="dnn-classes-group" style="display: none;">
+                        <div class="config-label">
+                            عدد الأصناف
+                            <span class="config-value" id="dnn-val-classes">3</span>
+                        </div>
+                        <input type="range" class="config-slider" id="dnn-config-classes" min="2" max="10" value="3">
+                    </div>
+                    
+                    <div class="config-divider"></div>
+                    
+                    <!-- Optimizer -->
+                    <div class="config-group">
+                        <div class="config-label">المحسّن (Optimizer)</div>
+                        <select class="dnn-select" id="dnn-optimizer">
+                            <option value="adam">Adam</option>
+                            <option value="sgd">SGD</option>
+                            <option value="rmsprop">RMSProp</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Learning Rate -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            معدل التعلم (Learning Rate)
+                            <span class="config-value" id="dnn-val-lr">0.01</span>
+                        </div>
+                        <input type="range" class="config-slider" id="dnn-config-lr" min="1" max="100" value="10" step="1">
+                    </div>
+                    
+                    <!-- Epochs -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            عدد الحقب (Epochs)
+                            <span class="config-value" id="dnn-val-epochs">50</span>
+                        </div>
+                        <input type="range" class="config-slider" id="dnn-config-epochs" min="1" max="500" value="50">
+                    </div>
+                    
+                    <!-- Batch Size -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            حجم الدفعة (Batch Size)
+                            <span class="config-value" id="dnn-val-batch">8</span>
+                        </div>
+                        <input type="range" class="config-slider" id="dnn-config-batch" min="1" max="64" value="8">
+                    </div>
+                    
+                    <button class="btn btn-primary dnn-build-btn" id="dnn-btn-build" style="width: 100%; justify-content: center; margin-top: auto;">
+                        <i class="fas fa-hammer"></i> بناء الشبكة
+                    </button>
+                </div>
+                
+            </div>
+        </div>
+    </div>
 
     <!-- ========================================== -->
     <!-- ANN SIMULATOR OVERLAY -->
@@ -508,6 +712,8 @@
     <script src="js/network-renderer.js"></script>
     <script src="js/feedforward.js"></script>
     <script src="js/backprop.js"></script>
+    <script src="js/dnn-builder.js"></script>
+    <script src="js/dnn-training.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

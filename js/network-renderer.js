@@ -16,11 +16,19 @@ class NetworkRenderer {
     this.highlightedPath = [];
     this.layerColors = [
       '#00E676', // input - green
-      '#42A5F5', // hidden 1 - blue
-      '#7E57C2', // hidden 2 - purple
-      '#AB47BC', // hidden 3 - pink purple
-      '#EC407A', // hidden 4 - pink
-      '#FF7043', // hidden 5 - orange
+      '#26C6DA', // cyan
+      '#42A5F5', // blue
+      '#5C6BC0', // indigo
+      '#7E57C2', // deep purple
+      '#AB47BC', // purple
+      '#EC407A', // pink
+      '#EF5350', // red
+      '#FF7043', // deep orange
+      '#FFA726', // orange
+      '#FFCA28', // amber
+      '#D4E157', // lime
+      '#66BB6A', // green
+      '#26A69A', // teal
       '#FF9800', // output - amber
     ];
   }
@@ -62,10 +70,10 @@ class NetworkRenderer {
   calculateLayout(network) {
     const { layers } = network;
     const numLayers = layers.length;
-    const padding = 60;
+    const padding = numLayers > 10 ? 30 : 60;
     const availableWidth = this.width - padding * 2;
     const availableHeight = this.height - padding * 2;
-    const layerSpacing = availableWidth / (numLayers - 1);
+    const layerSpacing = availableWidth / (numLayers - 1 || 1);
 
     this.nodes = [];
     this.connections = [];
@@ -73,7 +81,8 @@ class NetworkRenderer {
     // Calculate node positions - RTL so input is on the right
     for (let l = 0; l < numLayers; l++) {
       const numNodes = layers[l];
-      const nodeSpacing = Math.min(availableHeight / (numNodes + 1), 60);
+      const maxRadius = numLayers > 10 ? 10 : (numNodes > 10 ? 12 : 18);
+      const nodeSpacing = Math.min(availableHeight / (numNodes + 1), numNodes > 10 ? 25 : 60);
       const startY = (this.height - nodeSpacing * (numNodes - 1)) / 2;
 
       for (let n = 0; n < numNodes; n++) {
@@ -83,7 +92,7 @@ class NetworkRenderer {
           layer: l,
           index: n,
           value: null,
-          radius: Math.min(18, 30 - numNodes),
+          radius: Math.max(5, Math.min(maxRadius, 30 - numNodes)),
           color: this.getLayerColor(l, numLayers)
         });
       }

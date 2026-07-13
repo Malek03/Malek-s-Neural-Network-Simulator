@@ -24,6 +24,80 @@ const MathUtils = {
     return x > 0 ? 1 : 0;
   },
 
+  // Tanh activation function
+  tanh(x) {
+    return Math.tanh(x);
+  },
+
+  // Tanh derivative
+  tanhDerivative(x) {
+    const t = Math.tanh(x);
+    return 1 - t * t;
+  },
+
+  // Leaky ReLU activation function
+  leakyRelu(x, alpha = 0.01) {
+    return x > 0 ? x : alpha * x;
+  },
+
+  // Leaky ReLU derivative
+  leakyReluDerivative(x, alpha = 0.01) {
+    return x > 0 ? 1 : alpha;
+  },
+
+  // Softmax activation (for array/vector)
+  softmax(arr) {
+    const maxVal = Math.max(...arr);
+    const exps = arr.map(x => Math.exp(x - maxVal));
+    const sum = exps.reduce((a, b) => a + b, 0);
+    return exps.map(e => e / sum);
+  },
+
+  // Categorical Cross Entropy Loss
+  categoricalCrossEntropy(yTrueArr, yPredArr) {
+    const eps = 1e-7;
+    let loss = 0;
+    for (let i = 0; i < yTrueArr.length; i++) {
+      loss -= yTrueArr[i] * Math.log(Math.max(eps, yPredArr[i]));
+    }
+    return loss;
+  },
+
+  // Apply activation by name (scalar)
+  activate(x, name) {
+    switch (name) {
+      case 'sigmoid': return MathUtils.sigmoid(x);
+      case 'relu': return MathUtils.relu(x);
+      case 'tanh': return MathUtils.tanh(x);
+      case 'leaky_relu': return MathUtils.leakyRelu(x);
+      default: return MathUtils.relu(x);
+    }
+  },
+
+  // Apply activation derivative by name (scalar)
+  activateDerivative(x, name) {
+    switch (name) {
+      case 'sigmoid': return MathUtils.sigmoidDerivative(x);
+      case 'relu': return MathUtils.reluDerivative(x);
+      case 'tanh': return MathUtils.tanhDerivative(x);
+      case 'leaky_relu': return MathUtils.leakyReluDerivative(x);
+      default: return MathUtils.reluDerivative(x);
+    }
+  },
+
+  // Apply activation to matrix by name
+  applyActivation(matrix, name) {
+    if (name === 'softmax') {
+      return matrix.map(row => {
+        const sm = MathUtils.softmax(row);
+        return sm.map(v => parseFloat(v.toFixed(6)));
+      });
+    }
+    return matrix.map(row =>
+      row.map(val => parseFloat(MathUtils.activate(val, name).toFixed(6)))
+    );
+  },
+
   // Random weight initialization (Xavier/Glorot)
   randomWeight(fanIn, fanOut) {
     const limit = Math.sqrt(6 / (fanIn + fanOut));
