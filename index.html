@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محاكاة الشبكات العصبية - Neural Network Simulator</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-logo">NeuralSim(Eng:Malek)</div>
+        <ul class="nav-links">
+            <li><a href="#hero">الرئيسية</a></li>
+            <li><a href="#history">اللمحة التاريخية</a></li>
+            <li><a href="#bio">الإلهام البيولوجي</a></li>
+            <li><a href="#types">أنواع الشبكات</a></li>
+        </ul>
+        <button class="nav-mobile-toggle"><i class="fas fa-bars"></i></button>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero">
+        <canvas id="heroCanvas" class="hero-canvas"></canvas>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="dot"></span>
+                محاكي تفاعلي بالكامل
+            </div>
+            <h1 class="hero-title">رحلة إلى عالم <br><span class="gradient-text">الشبكات العصبية</span></h1>
+            <p class="hero-subtitle">
+                اكتشف كيف تتعلم الآلة وتحاكي العقل البشري. قم ببناء شبكتك العصبية الخاصة وشاهد العمليات الحسابية المعقدة تحدث أمام عينيك خطوة بخطوة.
+            </p>
+            <div class="hero-buttons">
+                <a href="#types" class="btn btn-primary">ابدأ المحاكاة <i class="fas fa-arrow-left"></i></a>
+                <a href="#history" class="btn btn-secondary">تعرف على التاريخ</a>
+            </div>
+            
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">تفاعلي</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">طرق حساب (Node/Matrix)</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="stat-number">10+</div>
+                    <div class="stat-label">خطوات شرح</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- History Section -->
+    <section id="history" class="section">
+        <div class="section-header">
+            <div class="section-badge">تاريخ الذكاء الاصطناعي</div>
+            <h2 class="section-title">كيف بدأ كل شيء؟</h2>
+            <div class="section-divider"></div>
+        </div>
+        
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">1943</div>
+                    <h3 class="timeline-title">McCulloch & Pitts</h3>
+                    <p class="timeline-desc">أول نموذج رياضي مبسط للخلية العصبية، يوضح كيف يمكن لخلايا المخ إجراء عمليات منطقية بسيطة.</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">1958</div>
+                    <h3 class="timeline-title">البيرسبترون (Perceptron)</h3>
+                    <p class="timeline-desc">طوّره Frank Rosenblatt كأول خوارزمية للتعرف على الأنماط بناءً على شبكة عصبية بصرية.</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">1986</div>
+                    <h3 class="timeline-title">الانتشار الخلفي (Backpropagation)</h3>
+                    <p class="timeline-desc">Geoffrey Hinton ومساعدوه يثبتون أن خوارزمية الانتشار الخلفي يمكنها تدريب شبكات عصبية عميقة متعددة الطبقات بشكل فعال.</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">2012</div>
+                    <h3 class="timeline-title">ثورة التعلم العميق (AlexNet)</h3>
+                    <p class="timeline-desc">شبكة AlexNet تفوز بمسابقة ImageNet بفارق شاسع باستخدام وحدات معالجة الرسومات (GPUs)، مما أطلق شرارة العصر الحديث للذكاء الاصطناعي.</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">2017</div>
+                    <h3 class="timeline-title">المحولات (Transformers)</h3>
+                    <p class="timeline-desc">باحثو Google ينشرون ورقة "Attention is All You Need"، مقدمين بنية أحدثت ثورة في معالجة اللغات الطبيعية.</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-year">2022+</div>
+                    <h3 class="timeline-title">عصر النماذج اللغوية الكبيرة</h3>
+                    <p class="timeline-desc">إطلاق ChatGPT ونماذج مشابهة أظهرت قدرات مذهلة للشبكات العصبية العميقة في الفهم وتوليد النصوص المعقدة.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Biology Inspiration Section -->
+    <section id="bio" class="section" style="background: var(--bg-darker)">
+        <div class="section-header">
+            <div class="section-badge">الإلهام</div>
+            <h2 class="section-title">من الدماغ إلى الآلة</h2>
+            <p class="section-desc">تم استلهام الشبكات العصبية الاصطناعية من بنية الخلايا العصبية في الدماغ البشري. شاهد كيف تتقابل الأجزاء.</p>
+            <div class="section-divider mt-2"></div>
+        </div>
+        
+        <div class="bio-section">
+            <div class="bio-card">
+                <div class="bio-card-title">الخلية البيولوجية</div>
+                <div class="bio-canvas-container">
+                    <canvas id="bioCanvas"></canvas>
+                </div>
+                <div class="bio-mapping">
+                    <div class="bio-map-item">
+                        <span class="bio-label">الزوائد الشجرية (Dendrites)</span>
+                        <span class="bio-value">تستقبل الإشارات</span>
+                    </div>
+                    <div class="bio-map-item">
+                        <span class="bio-label">التشابك العصبي (Synapse)</span>
+                        <span class="bio-value">قوة الاتصال</span>
+                    </div>
+                    <div class="bio-map-item">
+                        <span class="bio-label">جسم الخلية (Soma)</span>
+                        <span class="bio-value">يعالج الإشارات</span>
+                    </div>
+                    <div class="bio-map-item">
+                        <span class="bio-label">المحور العصبي (Axon)</span>
+                        <span class="bio-value">ينقل النتيجة</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bio-arrow">
+                <i class="fas fa-random"></i>
+            </div>
+            
+            <div class="bio-card" style="border-color: var(--accent)">
+                <div class="bio-card-title" style="color: var(--primary-light)">العقدة الاصطناعية (Node)</div>
+                <div class="bio-canvas-container flex-center">
+                    <!-- Simple CSS representation of artificial node -->
+                    <div style="position:relative; width:200px; height:150px; display:flex; align-items:center; justify-content:center;">
+                        <div style="position:absolute; left:0; top:20px; width:60px; height:2px; background:var(--primary); transform:rotate(20deg)"></div>
+                        <div style="position:absolute; left:0; top:75px; width:60px; height:2px; background:var(--primary);"></div>
+                        <div style="position:absolute; left:0; bottom:20px; width:60px; height:2px; background:var(--primary); transform:rotate(-20deg)"></div>
+                        
+                        <div style="width:80px; height:80px; border-radius:50%; background:var(--gradient-1); display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; z-index:2; box-shadow:0 0 15px rgba(108,99,255,0.5)">
+                            Σ / σ
+                        </div>
+                        
+                        <div style="position:absolute; right:0; top:75px; width:60px; height:2px; background:var(--accent);"></div>
+                    </div>
+                </div>
+                <div class="bio-mapping">
+                    <div class="bio-map-item">
+                        <span class="bio-label">المدخلات (Inputs - X)</span>
+                        <span class="bio-value">تستقبل البيانات</span>
+                    </div>
+                    <div class="bio-map-item">
+                        <span class="bio-label">الأوزان (Weights - W)</span>
+                        <span class="bio-value">تحدد أهمية المدخل</span>
+                    </div>
+                    <div class="bio-map-item">
+                        <span class="bio-label">دالة التجميع والتنشيط (Σ/σ)</span>
+                        <span class="bio-value">حساب المعادلة</span>
+                    </div>
+                    <div class="bio-map-item">
+                        <span class="bio-label">المخرج (Output - A)</span>
+                        <span class="bio-value">النتيجة النهائية</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Network Types Section -->
+    <section id="types" class="section">
+        <div class="section-header">
+            <div class="section-badge">التطبيق العملي</div>
+            <h2 class="section-title">اختر نوع الشبكة للمحاكاة</h2>
+            <div class="section-divider"></div>
+        </div>
+        
+        <div class="cards-grid">
+            <!-- ANN -->
+            <div class="network-card active" id="ann-card">
+                <div class="card-icon ann">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <h3 class="card-title">شبكة عصبية اصطناعية</h3>
+                <div class="card-subtitle">Artificial Neural Network (ANN)</div>
+                <p class="card-desc">الشبكة الأساسية المتصلة بالكامل (Fully Connected). ممتازة للمبتدئين لفهم أساسيات التعلم وحسابات التغذية الأمامية والانتشار الخلفي.</p>
+                <div class="card-status available">
+                    <i class="fas fa-check-circle"></i> متاح للمحاكاة
+                </div>
+            </div>
+            
+            <!-- CNN -->
+            <div class="network-card locked">
+                <div class="card-icon cnn">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <h3 class="card-title">الشبكة العصبية التلافيفية</h3>
+                <div class="card-subtitle">Convolutional Neural Network (CNN)</div>
+                <p class="card-desc">متخصصة في معالجة الصور والرؤية الحاسوبية. تستخدم الفلاتر (Filters) لاستخراج الميزات مثل الحواف والأشكال.</p>
+                <div class="card-status coming-soon">
+                    <i class="fas fa-lock"></i> قريباً
+                </div>
+            </div>
+            
+            <!-- RNN -->
+            <div class="network-card locked">
+                <div class="card-icon rnn">
+                    <i class="fas fa-sync"></i>
+                </div>
+                <h3 class="card-title">الشبكة العصبية المتكررة</h3>
+                <div class="card-subtitle">Recurrent Neural Network (RNN)</div>
+                <p class="card-desc">تحتوي على ذاكرة داخلية للتعامل مع البيانات المتسلسلة مثل النصوص والصوت وتوقعات الأسهم.</p>
+                <div class="card-status coming-soon">
+                    <i class="fas fa-lock"></i> قريباً
+                </div>
+            </div>
+            
+            <!-- Transformer -->
+            <div class="network-card locked">
+                <div class="card-icon transformer">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3 class="card-title">المحولات (Transformers)</h3>
+                <div class="card-subtitle">Self-Attention Mechanism</div>
+                <p class="card-desc">البنية الأساسية وراء ChatGPT ونماذج اللغة الحديثة. تعتمد على آلية "الانتباه" لفهم السياق في البيانات الموازية.</p>
+                <div class="card-status coming-soon">
+                    <i class="fas fa-lock"></i> قريباً
+                </div>
+            </div>
+            
+            <!-- GAN -->
+            <div class="network-card locked">
+                <div class="card-icon gan">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <h3 class="card-title">الشبكات التوليدية التنافسية</h3>
+                <div class="card-subtitle">Generative Adversarial Networks</div>
+                <p class="card-desc">تتكون من شبكتين (مولد ومميز) تتنافسان لتوليد بيانات جديدة وواقعية مثل الصور والصوت.</p>
+                <div class="card-status coming-soon">
+                    <i class="fas fa-lock"></i> قريباً
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p class="footer-text">تم تطوير محاكي الشبكات العصبية لأغراض تعليمية بواسطة م/مالك المصنف. &copy; 2026</p>
+    </footer>
+
+    <!-- ========================================== -->
+    <!-- ANN SIMULATOR OVERLAY -->
+    <!-- ========================================== -->
+    <div class="simulator-overlay" id="simulator-overlay">
+        <div class="simulator-container">
+            <!-- Header -->
+            <div class="simulator-header">
+                <div class="simulator-title">
+                    <i class="fas fa-network-wired" style="color: var(--primary)"></i> 
+                    محاكي الشبكة العصبية (ANN)  Eng:Malek Almosanif
+                </div>
+                <button class="simulator-close" id="close-sim"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <!-- Body -->
+            <div class="simulator-body">
+                
+                <!-- Main Workspace (Canvas & Data) -->
+                <div class="workspace">
+                    <div class="workspace-tabs">
+                        <button class="workspace-tab active">هيكلية الشبكة (Architecture)</button>
+                    </div>
+                    
+                    <div class="workspace-content">
+                        <!-- Canvas area -->
+                        <div class="network-canvas-wrapper">
+                            <canvas id="network-canvas"></canvas>
+                        </div>
+                        
+                        <!-- Data Table Area -->
+                        <div class="data-table-section" id="data-table-section">
+                            <div class="data-table-header">
+                                <div class="data-table-title">
+                                    <i class="fas fa-table" style="color: var(--accent)"></i> مجموعة بيانات عشوائية (التصنيف الثنائي)
+                                </div>
+                            </div>
+                            <div class="data-table-wrapper" id="data-table-container">
+                                <!-- Table generated by JS -->
+                                <p style="padding: 2rem; text-align:center; color: var(--text-muted)">قم ببناء الشبكة لتوليد البيانات...</p>
+                            </div>
+                            
+                            <!-- Action Buttons Container (FF / BP) -->
+                            <div class="action-buttons" id="action-buttons-container">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Computation Area -->
+                        <!-- FeedForward Panel -->
+                        <div class="computation-panel" id="ff-panel">
+                            <div class="simulator-header" style="border: 1px solid var(--glass-border); border-radius: var(--radius-md) var(--radius-md) 0 0; background: var(--bg-card);">
+                                <div class="simulator-title">
+                                    <i class="fas fa-forward" style="color: var(--primary-light)"></i> عمليات FeedForward
+                                </div>
+                                <button class="simulator-close" id="close-ff"><i class="fas fa-times"></i></button>
+                            </div>
+                            <div style="padding: 1.5rem; border: 1px solid var(--glass-border); border-top: none;">
+                                <div class="comp-progress">
+                                    <span class="comp-progress-text" id="ff-progress-text">0 / 0</span>
+                                    <div class="comp-progress-bar">
+                                        <div class="comp-progress-fill" id="ff-progress" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div id="ff-steps" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+                                <div id="matrix-display"></div>
+                            </div>
+                            <div class="comp-controls" style="border: 1px solid var(--glass-border); border-top: none;">
+                                <button class="btn btn-icon btn-secondary" id="ff-prev-btn" title="السابق"><i class="fas fa-step-backward"></i></button>
+                                <button class="btn btn-icon btn-primary" id="ff-play-btn" title="تشغيل / إيقاف"><i class="fas fa-play"></i></button>
+                                <button class="btn btn-icon btn-secondary" id="ff-next-btn" title="التالي"><i class="fas fa-step-forward"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- BackProp Panel -->
+                        <div class="computation-panel" id="bp-panel">
+                            <div class="simulator-header" style="border: 1px solid var(--error-dark); border-radius: var(--radius-md) var(--radius-md) 0 0; background: var(--bg-card);">
+                                <div class="simulator-title" style="color: var(--error)">
+                                    <i class="fas fa-backward"></i> عمليات BackPropagation
+                                </div>
+                                <button class="simulator-close" id="close-bp"><i class="fas fa-times"></i></button>
+                            </div>
+                            <div style="padding: 1.5rem; border: 1px solid var(--error-dark); border-top: none; border-bottom: none;">
+                                <div class="comp-progress">
+                                    <span class="comp-progress-text" id="bp-progress-text">0 / 0</span>
+                                    <div class="comp-progress-bar">
+                                        <div class="comp-progress-fill" id="bp-progress" style="width: 0%; background: linear-gradient(135deg, #FF5252, #D32F2F);"></div>
+                                    </div>
+                                </div>
+                                <div id="bp-steps" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+                            </div>
+                            <div class="comp-controls" style="border: 1px solid var(--error-dark); border-top: none;">
+                                <button class="btn btn-icon btn-secondary" id="bp-prev-btn" title="السابق"><i class="fas fa-step-backward"></i></button>
+                                <button class="btn btn-icon btn-danger" id="bp-play-btn" title="تشغيل / إيقاف"><i class="fas fa-play"></i></button>
+                                <button class="btn btn-icon btn-secondary" id="bp-next-btn" title="التالي"><i class="fas fa-step-forward"></i></button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Config Panel (Right Sidebar) -->
+                <div class="config-panel">
+                    <div style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; margin-bottom: 0.5rem;">
+                        إعدادات الشبكة
+                    </div>
+                    
+                    <div class="config-group">
+                        <div class="config-label">
+                            عدد عقد الإدخال (Features)
+                            <span class="config-value" id="val-inputs">2</span>
+                        </div>
+                        <input type="range" class="config-slider" id="config-inputs" min="2" max="10" value="2">
+                    </div>
+                    
+                    <div class="config-group">
+                        <div class="config-label">
+                            عدد الطبقات المخفية (Hidden Layers)
+                            <span class="config-value" id="val-layers">1</span>
+                        </div>
+                        <input type="range" class="config-slider" id="config-layers" min="1" max="5" value="1">
+                    </div>
+                    
+                    <div class="hidden-layers-config" id="hidden-layers-config">
+                        <!-- Populated by JS -->
+                    </div>
+                    
+                    <div class="config-group">
+                        <div class="config-label">
+                            عقد الإخراج (Output)
+                            <span class="config-value">1 (ثابت)</span>
+                        </div>
+                        <div class="config-info">
+                            هذه الشبكة مصممة لمشكلة <strong>التصنيف الثنائي (Binary Classification)</strong> لذلك نستخدم عقدة إخراج واحدة فقط تعطي قيمة بين 0 و 1.
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="btn-build" style="width: 100%; justify-content: center; margin-top: auto;">
+                        <i class="fas fa-hammer"></i> بناء الشبكة
+                    </button>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- COMPUTATION CHOICE MODAL -->
+    <!-- ========================================== -->
+    <div class="comp-modal-overlay" id="comp-modal">
+        <div class="comp-modal">
+            <h3>كيف تريد عرض العمليات الحسابية؟</h3>
+            <p>اختر طريقة استعراض خطوات التغذية الأمامية (FeedForward)</p>
+            
+            <div class="comp-modal-buttons">
+                <button class="btn btn-secondary" id="btn-ff-node" style="flex-direction: column; height: auto; padding: 1.5rem; gap: 1rem;">
+                    <i class="fas fa-project-diagram" style="font-size: 2rem; color: var(--primary-light)"></i>
+                    عقدة بعقدة (خطوة بخطوة)
+                    <span style="font-size: 0.8rem; font-weight:normal; color: var(--text-muted)">شرح تفصيلي لكل عقدة ومعادلتها</span>
+                </button>
+                
+                <button class="btn btn-secondary" id="btn-ff-matrix" style="flex-direction: column; height: auto; padding: 1.5rem; gap: 1rem;">
+                    <i class="fas fa-border-all" style="font-size: 2rem; color: var(--accent)"></i>
+                    حساب المصفوفات (كامل الشبكة)
+                    <span style="font-size: 0.8rem; font-weight:normal; color: var(--text-muted)">عرض عمليات ضرب المصفوفات للطبقات</span>
+                </button>
+            </div>
+            
+            <button class="btn mt-3" style="background: transparent; color: var(--text-secondary)" onclick="document.getElementById('comp-modal').classList.remove('active')">
+                إلغاء
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MATH EXPLANATION MODAL -->
+    <!-- ========================================== -->
+    <div class="comp-modal-overlay" id="math-explanation-modal">
+        <div class="comp-modal" style="max-width: 800px; text-align: right; max-height: 85vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;"><i class="fas fa-graduation-cap" style="color: var(--accent)"></i> شرح المعادلات والخطوات</h3>
+                <button class="simulator-close" onclick="document.getElementById('math-explanation-modal').classList.remove('active')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; width: auto; height: auto;"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; text-align: right;">هذا الشرح يوضح الأساس الرياضي وراء العمليات التي ستراها في المحاكي.</p>
+            
+            <div style="background: var(--bg-surface); padding: 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; text-align: right;">
+                <h4 style="color: var(--primary-light); margin-bottom: 1rem; font-size: 1.1rem;"><i class="fas fa-forward"></i> 1. التغذية الأمامية (FeedForward)</h4>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; line-height: 1.6;">الهدف من التغذية الأمامية هو أخذ المدخلات (Features) وتمريرها عبر طبقات الشبكة لإنتاج التوقع النهائي (Output).</p>
+                <ul style="color: var(--text-secondary); font-size: 0.85rem; padding-right: 1.5rem; line-height: 2;">
+                    <li><strong>المعادلة الخطية (Linear Equation):</strong> داخل كل عقدة، نضرب كل مدخل <code>X</code> في الوزن الخاص به <code>W</code>، ونجمع النتائج مع الانحياز <code>B</code>.<br>
+                    <code style="display: block; background: var(--bg-darker); padding: 0.5rem 1rem; border-radius: 4px; margin: 0.5rem 0; color: var(--accent); font-family: var(--font-mono); direction: ltr; text-align: left;">Z = (X₁ × W₁) + (X₂ × W₂) + ... + B</code></li>
+                    <li><strong>دالة التنشيط (Activation - Sigmoid):</strong> نأخذ الناتج <code>Z</code> ونمرره في الدالة لضغطه بين 0 و 1. هذا يسمح للشبكة بحل مشاكل التصنيف.<br>
+                    <code style="display: block; background: var(--bg-darker); padding: 0.5rem 1rem; border-radius: 4px; margin: 0.5rem 0; color: var(--success); font-family: var(--font-mono); direction: ltr; text-align: left;">A = 1 / (1 + e^(-Z))</code></li>
+                </ul>
+            </div>
+            
+            <div style="background: var(--bg-surface); padding: 1.5rem; border-radius: var(--radius-md); text-align: right;">
+                <h4 style="color: var(--error); margin-bottom: 1rem; font-size: 1.1rem;"><i class="fas fa-backward"></i> 2. الانتشار الخلفي (BackPropagation)</h4>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; line-height: 1.6;">الهدف هنا هو معرفة مدى الخطأ في التوقع، ثم الرجوع للخلف لتعديل الأوزان (Weights) لكي لا يتكرر الخطأ في المرات القادمة.</p>
+                <ul style="color: var(--text-secondary); font-size: 0.85rem; padding-right: 1.5rem; line-height: 2;">
+                    <li><strong>حساب الخطأ (Loss Function):</strong> نستخدم دالة Binary Cross Entropy لحساب الفرق بين التوقع <code>A</code> والقيمة الحقيقية <code>Y</code>.<br>
+                    <code style="display: block; background: var(--bg-darker); padding: 0.5rem 1rem; border-radius: 4px; margin: 0.5rem 0; color: var(--warning); font-family: var(--font-mono); direction: ltr; text-align: left;">L = - [Y·log(A) + (1-Y)·log(1-A)]</code></li>
+                    <li><strong>حساب الانحدار (Gradients):</strong> باستخدام قاعدة السلسلة (Chain Rule)، نحسب مشتقة الخطأ بالنسبة لكل وزن لمعرفة اتجاه ومقدار التعديل المطلوب.<br>
+                    <code style="display: block; background: var(--bg-darker); padding: 0.5rem 1rem; border-radius: 4px; margin: 0.5rem 0; color: #CE93D8; font-family: var(--font-mono); direction: ltr; text-align: left;">∂L/∂W = ∂L/∂A × ∂A/∂Z × ∂Z/∂W</code></li>
+                    <li><strong>تحديث الأوزان (Update Weights):</strong> نطرح الانحدار مضروباً في معدل التعلم (Learning Rate) من الوزن القديم للحصول على الوزن الجديد.<br>
+                    <code style="display: block; background: var(--bg-darker); padding: 0.5rem 1rem; border-radius: 4px; margin: 0.5rem 0; color: var(--primary-light); font-family: var(--font-mono); direction: ltr; text-align: left;">W_new = W_old - (LR × ∂L/∂W)</code></li>
+                </ul>
+            </div>
+            
+            <button class="btn btn-primary mt-3" onclick="document.getElementById('math-explanation-modal').classList.remove('active')" style="width: 100%; justify-content: center;">
+                جاهز للمحاكاة! <i class="fas fa-check" style="margin-right: 0.5rem;"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/math-utils.js"></script>
+    <script src="js/data-generator.js"></script>
+    <script src="js/hero-animation.js"></script>
+    <script src="js/network-builder.js"></script>
+    <script src="js/network-renderer.js"></script>
+    <script src="js/feedforward.js"></script>
+    <script src="js/backprop.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
