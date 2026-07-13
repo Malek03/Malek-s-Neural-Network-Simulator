@@ -113,7 +113,8 @@ class DNNBuilder {
       weights,
       biases,
       activations,
-      layerNames: this.getLayerNames(layers)
+      layerNames: this.getLayerNames(layers),
+      initialWeights: JSON.parse(JSON.stringify(weights))
     };
 
     // Generate data

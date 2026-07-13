@@ -524,7 +524,54 @@ function initDNNSimulator() {
 
     // Create trainer
     dnnTrainer = new DNNTrainer(dnnBuilder);
+
+    // Initialize Weights Viewer
+    const layerSelect = document.getElementById('dnn-weights-layer-select');
+    if (layerSelect && network.weights) {
+      layerSelect.innerHTML = '';
+      for (let i = 0; i < network.weights.length; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.innerText = `الطبقة ${i + 1} (${network.layerNames[i]} → ${network.layerNames[i+1]})`;
+        layerSelect.appendChild(option);
+      }
+      
+      const updateWeightsView = () => {
+        const idx = parseInt(layerSelect.value);
+        if (isNaN(idx)) return;
+        
+        const initWeights = network.initialWeights[idx];
+        const currWeights = network.weights[idx];
+        
+        document.getElementById('dnn-initial-weights-table').innerHTML = renderWeightsTableHTML(initWeights);
+        document.getElementById('dnn-current-weights-table').innerHTML = renderWeightsTableHTML(currWeights);
+      };
+      
+      layerSelect.removeEventListener('change', window._dnnWeightsHandler);
+      window._dnnWeightsHandler = updateWeightsView;
+      layerSelect.addEventListener('change', window._dnnWeightsHandler);
+      
+      updateWeightsView();
+    }
   });
+
+  function renderWeightsTableHTML(matrix) {
+    if (!matrix || matrix.length === 0) return '';
+    let html = '<thead><tr><th></th>';
+    for (let j = 0; j < matrix[0].length; j++) {
+      html += `<th>N${j+1}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+    for (let i = 0; i < matrix.length; i++) {
+      html += `<tr><th>N${i+1}</th>`;
+      for (let j = 0; j < matrix[i].length; j++) {
+        html += `<td>${matrix[i][j].toFixed(4)}</td>`;
+      }
+      html += '</tr>';
+    }
+    html += '</tbody>';
+    return html;
+  }
 
   // ── Training Controls ──
   const trainBtn = document.getElementById('dnn-btn-train');
@@ -584,6 +631,11 @@ function initDNNSimulator() {
       // Update chart every few epochs to avoid too many redraws
       if (epoch % Math.max(1, Math.floor(totalEpochs / 100)) === 0 || epoch === totalEpochs - 1) {
         DNNTrainer.drawLossChart('dnn-loss-chart', dnnTrainer.history);
+      }
+      
+      // Live update the current weights table
+      if (window._dnnWeightsHandler) {
+        window._dnnWeightsHandler();
       }
     };
 
