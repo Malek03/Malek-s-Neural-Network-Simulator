@@ -58,6 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 6. DNN Simulator Initialization
   initDNNSimulator();
+
+  // 7. Concept Cards Interactive Visualizations
+  if (typeof ConceptCards !== 'undefined') {
+    ConceptCards.init();
+  }
 });
 
 function initBioCanvas() {
@@ -458,7 +463,7 @@ function initDNNSimulator() {
       div.innerHTML = `
         <div class="dnn-layer-config-row">
           <label>طبقة ${idx + 1}</label>
-          <input type="range" class="config-slider" min="1" max="20" value="${nodes}" data-idx="${idx}">
+          <input type="range" class="config-slider" min="1" max="255" value="${nodes}" data-idx="${idx}">
           <span class="config-value">${nodes}</span>
         </div>
         <div class="dnn-layer-config-row">

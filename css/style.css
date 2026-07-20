@@ -1885,6 +1885,154 @@ img {
   animation: trainPulse 1s infinite;
 }
 
+/* ── Interactive Concepts Section ── */
+.concepts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.concept-card {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.concept-card:hover {
+  border-color: rgba(108, 99, 255, 0.4);
+  box-shadow: var(--shadow-md);
+}
+
+.concept-card-header {
+  padding: 1.2rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+  transition: var(--transition);
+}
+
+.concept-card-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.concept-title {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.concept-icon {
+  color: var(--text-muted);
+  transition: transform 0.3s ease;
+}
+
+.concept-card.active .concept-icon {
+  transform: rotate(180deg);
+}
+
+.concept-card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+  padding: 0 1.5rem;
+  background: var(--bg-darker);
+}
+
+.concept-card.active .concept-card-body {
+  max-height: 800px;
+  padding: 1.5rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+.concept-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: none;
+}
+
+.concept-controls::-webkit-scrollbar {
+  display: none;
+}
+
+.concept-tab {
+  background: var(--bg-surface);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+.concept-tab:hover {
+  border-color: var(--primary-light);
+  color: var(--text-primary);
+}
+
+.concept-tab.active {
+  background: rgba(108, 99, 255, 0.15);
+  border-color: var(--primary);
+  color: var(--primary-light);
+  font-weight: 600;
+}
+
+.concept-canvas {
+  width: 100%;
+  height: 200px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+  position: relative;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.concept-canvas canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.concept-formula {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(10, 14, 39, 0.8);
+  backdrop-filter: blur(4px);
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--accent);
+  direction: ltr;
+}
+
+.concept-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: justify;
+}
+
+.concept-desc b {
+  color: var(--text-primary);
+}
+
 /* ── Utility Classes ── */
 .text-center { text-align: center; }
 .text-right { text-align: right; }

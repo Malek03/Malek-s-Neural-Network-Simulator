@@ -23,7 +23,7 @@ class DNNBuilder {
   // ── Configuration Setters ──
 
   setInputNodes(n) {
-    this.config.inputNodes = Math.max(1, Math.min(20, n));
+    this.config.inputNodes = Math.max(1, Math.min(255, n));
   }
 
   setHiddenLayerCount(n) {
@@ -42,8 +42,8 @@ class DNNBuilder {
   }
 
   setHiddenLayerNodes(layerIndex, nodes) {
-    if (layerIndex < this.config.hiddenLayers.length) {
-      this.config.hiddenLayers[layerIndex] = Math.max(1, Math.min(20, nodes));
+    if (layerIndex >= 0 && layerIndex < this.config.hiddenLayers.length) {
+      this.config.hiddenLayers[layerIndex] = Math.max(1, Math.min(255, nodes));
     }
   }
 
