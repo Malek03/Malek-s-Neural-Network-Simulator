@@ -31,6 +31,8 @@ class NetworkRenderer {
       '#26A69A', // teal
       '#FF9800', // output - amber
     ];
+    this.dropoutMasks = null;  // Array of masks per hidden layer
+    this.dropoutLayers = null; // Network layers array for offset calculation
   }
 
   /**
@@ -51,6 +53,29 @@ class NetworkRenderer {
       this.animationProgress = 1;
       this.draw();
     }
+  }
+
+  /**
+   * Set dropout masks for visual rendering
+   */
+  setDropoutMasks(masks, layers) {
+    this.dropoutMasks = masks;
+    this.dropoutLayers = layers;
+  }
+
+  /**
+   * Check if a node is dropped out
+   */
+  isNodeDropped(node) {
+    if (!this.dropoutMasks || !this.dropoutLayers) return false;
+    // Dropout only applies to hidden layers (layer index 1 to L-2)
+    const numLayers = this.dropoutLayers.length;
+    if (node.layer === 0 || node.layer === numLayers - 1) return false;
+    const hiddenLayerIdx = node.layer - 1; // Map to dropout mask index
+    if (hiddenLayerIdx >= 0 && hiddenLayerIdx < this.dropoutMasks.length) {
+      return this.dropoutMasks[hiddenLayerIdx][node.index] === 0;
+    }
+    return false;
   }
 
   resize() {
@@ -188,6 +213,11 @@ class NetworkRenderer {
     const from = this.nodes[conn.from];
     const to = this.nodes[conn.to];
 
+    // Check if either endpoint is dropped out
+    const fromDropped = this.isNodeDropped(from);
+    const toDropped = this.isNodeDropped(to);
+    const isDroppedConn = fromDropped || toDropped;
+
     const isHighlighted = this.highlightedPath.some(
       p => p.from === conn.from && p.to === conn.to
     );
@@ -197,7 +227,12 @@ class NetworkRenderer {
     let alpha = 0.15 + absWeight * 0.3;
     let color;
 
-    if (isHighlighted) {
+    if (isDroppedConn) {
+      // Faded connection for dropped neurons
+      color = 'rgba(107, 111, 141, 0.06)';
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([3, 4]);
+    } else if (isHighlighted) {
       color = `rgba(0, 229, 255, 0.8)`;
       ctx.lineWidth = 2.5;
     } else {
@@ -212,6 +247,7 @@ class NetworkRenderer {
     ctx.lineTo(to.x, to.y);
     ctx.strokeStyle = color;
     ctx.stroke();
+    ctx.setLineDash([]);
 
     // Draw weight label on hover/highlight
     if (isHighlighted) {
@@ -496,9 +532,10 @@ class NetworkRenderer {
       this.activeNode.layer === node.layer &&
       this.activeNode.index === node.index;
     const isActiveLayer = this.activeLayer === node.layer;
+    const isDropped = this.isNodeDropped(node);
 
     // Active layer glow during pass animation
-    if (isActiveLayer) {
+    if (isActiveLayer && !isDropped) {
       const glowColor = this.passDirection === 'backward' ? 'rgba(255, 82, 82,' : 'rgba(0, 230, 118,';
       const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, r * 3.5);
       gradient.addColorStop(0, glowColor + '0.5)');
@@ -510,7 +547,7 @@ class NetworkRenderer {
     }
 
     // Glow effect for individually active node
-    if (isActive) {
+    if (isActive && !isDropped) {
       const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, r * 3);
       gradient.addColorStop(0, node.color + '40');
       gradient.addColorStop(1, 'transparent');
@@ -518,6 +555,37 @@ class NetworkRenderer {
       ctx.arc(node.x, node.y, r * 3, 0, Math.PI * 2);
       ctx.fillStyle = gradient;
       ctx.fill();
+    }
+
+    if (isDropped) {
+      // Dropped neuron: dimmed with dashed outline
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, r + 2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(107, 111, 141, 0.08)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(20, 24, 50, 0.7)';
+      ctx.fill();
+
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = 'rgba(224, 64, 251, 0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw X marker
+      const xSize = r * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(node.x - xSize, node.y - xSize);
+      ctx.lineTo(node.x + xSize, node.y + xSize);
+      ctx.moveTo(node.x + xSize, node.y - xSize);
+      ctx.lineTo(node.x - xSize, node.y + xSize);
+      ctx.strokeStyle = 'rgba(224, 64, 251, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      return;
     }
 
     // Outer ring

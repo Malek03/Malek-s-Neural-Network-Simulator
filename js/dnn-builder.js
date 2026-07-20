@@ -14,10 +14,14 @@ class DNNBuilder {
       learningRate: 0.01,
       epochs: 50,
       batchSize: 8,
+      dropoutRate: 0,             // Dropout rate (0 = off, 0.1-0.9)
+      earlyStopEnabled: false,    // Enable early stopping
+      earlyStopPatience: 5,       // Number of epochs to wait
     };
     this.network = null;
     this.data = null;
     this.isBuilt = false;
+    this.dropoutMasks = null; // Current dropout masks per hidden layer
   }
 
   // ── Configuration Setters ──
@@ -75,6 +79,18 @@ class DNNBuilder {
 
   setBatchSize(n) {
     this.config.batchSize = Math.max(1, Math.min(128, n));
+  }
+
+  setDropoutRate(rate) {
+    this.config.dropoutRate = Math.max(0, Math.min(0.9, rate));
+  }
+
+  setEarlyStopEnabled(enabled) {
+    this.config.earlyStopEnabled = enabled;
+  }
+
+  setEarlyStopPatience(n) {
+    this.config.earlyStopPatience = Math.max(1, Math.min(50, n));
   }
 
   get outputNodes() {
@@ -138,9 +154,30 @@ class DNNBuilder {
     return names;
   }
 
+  // ── Dropout Mask Generation ──
+
+  generateDropoutMasks() {
+    const rate = this.config.dropoutRate;
+    if (rate <= 0) {
+      this.dropoutMasks = null;
+      return;
+    }
+    const masks = [];
+    // Only apply dropout to hidden layers (not input or output)
+    for (let l = 0; l < this.config.hiddenLayers.length; l++) {
+      const numNeurons = this.config.hiddenLayers[l];
+      const mask = [];
+      for (let j = 0; j < numNeurons; j++) {
+        mask.push(Math.random() > rate ? 1 : 0);
+      }
+      masks.push(mask);
+    }
+    this.dropoutMasks = masks;
+  }
+
   // ── Feedforward ──
 
-  feedforward(inputRow) {
+  feedforward(inputRow, useDropout = false) {
     const { weights, biases, activations, layers } = this.network;
     const layerOutputs = [inputRow];
     const layerLinear = [];
@@ -176,6 +213,20 @@ class DNNBuilder {
         }
       }
 
+      // Apply dropout to hidden layers only (not the output layer)
+      const isHiddenLayer = l < weights.length - 1;
+      if (useDropout && isHiddenLayer && this.dropoutMasks && this.dropoutMasks[l]) {
+        const mask = this.dropoutMasks[l];
+        const scale = 1 / (1 - this.config.dropoutRate); // Inverted dropout scaling
+        for (let j = 0; j < a.length; j++) {
+          if (mask[j] === 0) {
+            a[j] = 0; // Dropped neuron
+          } else {
+            a[j] = parseFloat((a[j] * scale).toFixed(6)); // Scale surviving neurons
+          }
+        }
+      }
+
       layerLinear.push(z);
       layerOutputs.push(a);
       currentInput = a;
@@ -190,9 +241,9 @@ class DNNBuilder {
 
   // ── Backpropagation (single sample) ──
 
-  backpropagate(inputRow, yTrue) {
+  backpropagate(inputRow, yTrue, useDropout = false) {
     const { weights, biases, activations } = this.network;
-    const ff = this.feedforward(inputRow);
+    const ff = this.feedforward(inputRow, useDropout);
     const { layerOutputs, layerLinear } = ff;
     const L = weights.length;
 

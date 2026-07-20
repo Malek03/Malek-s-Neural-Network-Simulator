@@ -405,6 +405,13 @@ function initDNNSimulator() {
   const epochsVal = document.getElementById('dnn-val-epochs');
   const batchSlider = document.getElementById('dnn-config-batch');
   const batchVal = document.getElementById('dnn-val-batch');
+  const dropoutSlider = document.getElementById('dnn-config-dropout');
+  const dropoutVal = document.getElementById('dnn-val-dropout');
+  const dropoutHint = document.getElementById('dnn-dropout-hint');
+  const earlyStopToggle = document.getElementById('dnn-early-stop-toggle');
+  const earlyStopConfig = document.getElementById('dnn-early-stop-config');
+  const patienceSlider = document.getElementById('dnn-config-patience');
+  const patienceVal = document.getElementById('dnn-val-patience');
 
   inputsSlider.addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
@@ -450,6 +457,36 @@ function initDNNSimulator() {
     const val = parseInt(e.target.value);
     batchVal.innerText = val;
     dnnBuilder.setBatchSize(val);
+  });
+
+  dropoutSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    const rate = val / 100;
+    dropoutVal.innerText = val + '%';
+    dnnBuilder.setDropoutRate(rate);
+    // Update hint text based on value
+    if (val === 0) {
+      dropoutHint.innerText = '0% = بدون إسقاط. القيم الموصى بها: 20% - 50%';
+      dropoutHint.style.color = 'var(--text-muted)';
+    } else if (val <= 50) {
+      dropoutHint.innerText = `سيتم إسقاط ${val}% من الخلايا عشوائياً أثناء التدريب`;
+      dropoutHint.style.color = '#E040FB';
+    } else {
+      dropoutHint.innerText = `⚠ نسبة عالية! قد تبطئ التعلم بشكل كبير`;
+      dropoutHint.style.color = 'var(--warning)';
+    }
+  });
+
+  earlyStopToggle.addEventListener('change', (e) => {
+    const enabled = e.target.checked;
+    dnnBuilder.setEarlyStopEnabled(enabled);
+    earlyStopConfig.style.display = enabled ? 'flex' : 'none';
+  });
+
+  patienceSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    patienceVal.innerText = val;
+    dnnBuilder.setEarlyStopPatience(val);
   });
 
   function updateHiddenLayersUI() {
@@ -510,6 +547,15 @@ function initDNNSimulator() {
     epochsVal.innerText = dnnBuilder.config.epochs;
     batchSlider.value = dnnBuilder.config.batchSize;
     batchVal.innerText = dnnBuilder.config.batchSize;
+    // Dropout
+    const dropoutPercent = Math.round(dnnBuilder.config.dropoutRate * 100);
+    dropoutSlider.value = dropoutPercent;
+    dropoutVal.innerText = dropoutPercent + '%';
+    // Early Stopping
+    earlyStopToggle.checked = dnnBuilder.config.earlyStopEnabled;
+    earlyStopConfig.style.display = dnnBuilder.config.earlyStopEnabled ? 'flex' : 'none';
+    patienceSlider.value = dnnBuilder.config.earlyStopPatience;
+    patienceVal.innerText = dnnBuilder.config.earlyStopPatience;
     updateHiddenLayersUI();
   }
 
@@ -599,6 +645,21 @@ function initDNNSimulator() {
 
     document.getElementById('dnn-opt-display').innerText = dnnBuilder.config.optimizer.toUpperCase();
 
+    // Show dropout info if active
+    const dropoutRate = dnnBuilder.config.dropoutRate;
+    const dropoutStat = document.getElementById('dnn-dropout-stat');
+    if (dropoutRate > 0) {
+      dropoutStat.style.display = 'block';
+      document.getElementById('dnn-dropout-display').innerText = Math.round(dropoutRate * 100) + '%';
+      // Generate initial dropout masks to show visually
+      dnnBuilder.generateDropoutMasks();
+      dnnRenderer.setDropoutMasks(dnnBuilder.dropoutMasks, dnnBuilder.network.layers);
+      dnnRenderer.draw();
+    } else {
+      dropoutStat.style.display = 'none';
+      dnnRenderer.setDropoutMasks(null, null);
+    }
+
     // Hook up animation for the first sample pass
     dnnTrainer.onPassAnimation = async (layerOutputs, deltas) => {
       const passIndicator = document.getElementById('dnn-pass-indicator');
@@ -642,6 +703,12 @@ function initDNNSimulator() {
       if (window._dnnWeightsHandler) {
         window._dnnWeightsHandler();
       }
+
+      // Update dropout visualization dynamically
+      if (dnnBuilder.config.dropoutRate > 0) {
+        dnnRenderer.setDropoutMasks(dnnBuilder.dropoutMasks, dnnBuilder.network.layers);
+        dnnRenderer.draw();
+      }
     };
 
     dnnTrainer.onTrainingEnd = (history) => {
@@ -649,6 +716,25 @@ function initDNNSimulator() {
       stopBtn.disabled = true;
       statusEl.classList.remove('dnn-training-active');
       DNNTrainer.drawLossChart('dnn-loss-chart', history);
+      // Clear dropout visual
+      dnnRenderer.setDropoutMasks(null, null);
+      dnnRenderer.draw();
+    };
+
+    dnnTrainer.onEarlyStop = (epoch, bestLoss) => {
+      const statusEl = document.getElementById('dnn-training-status');
+      // Show early stop notification
+      const passIndicator = document.getElementById('dnn-pass-indicator');
+      const passLabel = document.getElementById('dnn-pass-label');
+      if (passIndicator && passLabel) {
+        passIndicator.style.display = 'flex';
+        passIndicator.className = 'dnn-pass-indicator early-stop';
+        passLabel.innerHTML = `<i class="fas fa-hand-paper"></i> توقف مبكر عند Epoch ${epoch + 1} — أفضل Loss: ${bestLoss.toFixed(4)}`;
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          passIndicator.style.display = 'none';
+        }, 5000);
+      }
     };
 
     await dnnTrainer.train();
@@ -681,9 +767,17 @@ function initDNNSimulator() {
     document.getElementById('dnn-opt-display').innerText = '—';
     document.getElementById('dnn-train-progress').style.width = '0%';
     document.getElementById('dnn-training-status').classList.remove('dnn-training-active');
+    document.getElementById('dnn-dropout-stat').style.display = 'none';
+
+    // Hide pass indicator (early stop notification)
+    const passIndicator = document.getElementById('dnn-pass-indicator');
+    if (passIndicator) passIndicator.style.display = 'none';
 
     trainBtn.disabled = false;
     stopBtn.disabled = true;
+
+    // Clear dropout visual
+    dnnRenderer.setDropoutMasks(null, null);
 
     // Clear chart
     const canvas = document.getElementById('dnn-loss-chart');

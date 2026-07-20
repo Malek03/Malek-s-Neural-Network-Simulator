@@ -12,6 +12,7 @@ class DNNTrainer {
     this.onEpochEnd = null;    // callback(epoch, loss, accuracy)
     this.onTrainingEnd = null; // callback(history)
     this.onBatchEnd = null;    // callback(epoch, batch, loss)
+    this.onEarlyStop = null;   // callback(epoch, bestLoss)
 
     // Adam / RMSProp state
     this.mWeights = null; // first moment (Adam)
@@ -168,6 +169,14 @@ class DNNTrainer {
     const { features, labels } = this.builder.data;
     const { epochs, batchSize } = this.builder.config;
     const numSamples = features.length;
+    const useDropout = this.builder.config.dropoutRate > 0;
+
+    // Early stopping state
+    const earlyStop = this.builder.config.earlyStopEnabled;
+    const patience = this.builder.config.earlyStopPatience;
+    let bestLoss = Infinity;
+    let patienceCounter = 0;
+    let earlyStopTriggered = false;
 
     for (let epoch = 0; epoch < epochs; epoch++) {
       if (this.shouldStop) break;
@@ -198,7 +207,13 @@ class DNNTrainer {
 
         for (let s = batchStart; s < batchEnd; s++) {
           const idx = indices[s];
-          const result = this.builder.backpropagate(features[idx], labels[idx]);
+
+          // Generate new dropout masks for each sample during training
+          if (useDropout) {
+            this.builder.generateDropoutMasks();
+          }
+
+          const result = this.builder.backpropagate(features[idx], labels[idx], useDropout);
 
           if (b === 0 && s === batchStart && this.onPassAnimation) {
             await this.onPassAnimation(result.layerOutputs, result.deltas);
@@ -232,8 +247,29 @@ class DNNTrainer {
       this.history.loss.push(parseFloat(avgLoss.toFixed(6)));
       this.history.accuracy.push(parseFloat(accuracy.toFixed(4)));
 
+      // Early stopping check
+      if (earlyStop) {
+        if (avgLoss < bestLoss - 1e-6) {
+          bestLoss = avgLoss;
+          patienceCounter = 0;
+        } else {
+          patienceCounter++;
+          if (patienceCounter >= patience) {
+            earlyStopTriggered = true;
+          }
+        }
+      }
+
       if (this.onEpochEnd) {
         this.onEpochEnd(epoch, avgLoss, accuracy);
+      }
+
+      // Check early stopping after callback
+      if (earlyStopTriggered) {
+        if (this.onEarlyStop) {
+          this.onEarlyStop(epoch, bestLoss);
+        }
+        break;
       }
 
       // Yield to UI every epoch

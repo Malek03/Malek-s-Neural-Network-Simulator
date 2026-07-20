@@ -465,6 +465,10 @@
                                         <span class="dnn-mini-label">Opt</span>
                                         <span class="dnn-mini-value" id="dnn-opt-display">—</span>
                                     </div>
+                                    <div class="dnn-mini-stat" id="dnn-dropout-stat" style="display:none;">
+                                        <span class="dnn-mini-label" style="color: #E040FB;">Drop</span>
+                                        <span class="dnn-mini-value" id="dnn-dropout-display" style="color: #E040FB;">—</span>
+                                    </div>
                                 </div>
                                 <div class="dnn-top-progress">
                                     <div class="comp-progress-bar" style="height: 4px;">
@@ -633,6 +637,43 @@
                             <span class="config-value" id="dnn-val-batch">8</span>
                         </div>
                         <input type="range" class="config-slider" id="dnn-config-batch" min="1" max="64" value="8">
+                    </div>
+                    
+                    <div class="config-divider"></div>
+                    
+                    <!-- Dropout -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            <span><i class="fas fa-random" style="color: #E040FB; margin-left: 0.3rem;"></i> إسقاط الخلايا (Dropout)</span>
+                            <span class="config-value" id="dnn-val-dropout">0%</span>
+                        </div>
+                        <input type="range" class="config-slider dnn-dropout-slider" id="dnn-config-dropout" min="0" max="90" value="0" step="5">
+                        <div class="config-hint" id="dnn-dropout-hint" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                            0% = بدون إسقاط. القيم الموصى بها: 20% - 50%
+                        </div>
+                    </div>
+                    
+                    <!-- Early Stopping -->
+                    <div class="config-group">
+                        <div class="config-label" style="cursor: pointer;" id="dnn-early-stop-toggle-label">
+                            <span><i class="fas fa-hand-paper" style="color: var(--warning); margin-left: 0.3rem;"></i> الإيقاف المبكر (Early Stop)</span>
+                            <label class="dnn-toggle-switch">
+                                <input type="checkbox" id="dnn-early-stop-toggle">
+                                <span class="dnn-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Early Stopping Patience (shown when enabled) -->
+                    <div class="config-group dnn-early-stop-config" id="dnn-early-stop-config" style="display: none;">
+                        <div class="config-label">
+                            عدد الحقب للصبر (Patience)
+                            <span class="config-value" id="dnn-val-patience">5</span>
+                        </div>
+                        <input type="range" class="config-slider" id="dnn-config-patience" min="1" max="50" value="5">
+                        <div class="config-hint" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                            عدد الحقب بدون تحسن قبل الإيقاف التلقائي
+                        </div>
                     </div>
                     
                     <button class="btn btn-primary dnn-build-btn" id="dnn-btn-build" style="width: 100%; justify-content: center; margin-top: auto;">
