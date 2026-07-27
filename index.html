@@ -350,15 +350,15 @@
             </div>
             
             <!-- CNN -->
-            <div class="network-card locked">
+            <div class="network-card" id="cnn-card">
                 <div class="card-icon cnn">
                     <i class="fas fa-layer-group"></i>
                 </div>
                 <h3 class="card-title">الشبكة العصبية التلافيفية</h3>
                 <div class="card-subtitle">Convolutional Neural Network (CNN)</div>
                 <p class="card-desc">متخصصة في معالجة الصور والرؤية الحاسوبية. تستخدم الفلاتر (Filters) لاستخراج الميزات مثل الحواف والأشكال.</p>
-                <div class="card-status coming-soon">
-                    <i class="fas fa-lock"></i> قريباً
+                <div class="card-status available">
+                    <i class="fas fa-check-circle"></i> متاح للمحاكاة
                 </div>
             </div>
             
@@ -831,6 +831,147 @@
     </div>
 
     <!-- ========================================== -->
+    <!-- CNN SIMULATOR OVERLAY -->
+    <!-- ========================================== -->
+    <div class="simulator-overlay" id="cnn-simulator-overlay">
+        <div class="simulator-container">
+            <!-- Header -->
+            <div class="simulator-header">
+                <div class="simulator-title">
+                    <i class="fas fa-layer-group" style="color: var(--accent)"></i> 
+                    محاكي الشبكة التلافيفية (CNN)  Eng:Malek Almosanif
+                </div>
+                <button class="simulator-close" id="cnn-close-sim"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <!-- Body -->
+            <div class="simulator-body">
+                
+                <!-- Main Workspace -->
+                <div class="workspace">
+                    <!-- Pipeline Overview Bar -->
+                    <div class="cnn-pipeline-bar" id="cnn-pipeline-bar"></div>
+
+                    <!-- Step Navigation -->
+                    <div class="cnn-nav-bar">
+                        <div class="cnn-nav-controls">
+                            <button class="btn btn-secondary btn-sm" id="cnn-prev-btn" disabled>
+                                <i class="fas fa-chevron-right"></i> السابق
+                            </button>
+                            <button class="btn btn-icon btn-secondary btn-sm" id="cnn-play-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="btn btn-primary btn-sm" id="cnn-next-btn" disabled>
+                                التالي <i class="fas fa-chevron-left"></i>
+                            </button>
+                        </div>
+                        <div class="cnn-step-counter-box">
+                            <span class="cnn-step-counter-label">الخطوة</span>
+                            <span class="cnn-step-counter" id="cnn-step-counter">0 / 0</span>
+                        </div>
+                    </div>
+
+                    <!-- Step Dot Indicators -->
+                    <div class="cnn-step-dots" id="cnn-step-dots">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- Viewport (step content rendered here) -->
+                    <div class="cnn-viewport" id="cnn-viewport">
+                        <div class="cnn-empty-state">
+                            <i class="fas fa-hand-pointer" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+                            <h3>ارسم رقماً أو اختر مثالاً</h3>
+                            <p>ارسم رقماً على لوحة الرسم 5×5 في اللوحة الجانبية، أو اختر من الأمثلة الجاهزة، ثم اضغط "تشغيل الشبكة"</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Config Panel (Right Sidebar) -->
+                <div class="config-panel cnn-config-panel">
+                    <div style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-layer-group" style="color: var(--accent)"></i> إعدادات CNN
+                    </div>
+
+                    <!-- Drawing Canvas -->
+                    <div class="config-group">
+                        <div class="config-label" style="margin-bottom: 0.5rem;">
+                            <i class="fas fa-pencil-alt" style="color: var(--success)"></i>
+                            ارسم رقماً (5×5)
+                        </div>
+                        <div class="cnn-draw-area">
+                            <div class="cnn-draw-grid" id="cnn-draw-grid">
+                                <!-- 25 cells populated by JS -->
+                            </div>
+                            <button class="btn btn-sm" id="cnn-clear-canvas" style="width: 100%; margin-top: 0.5rem; justify-content: center; background: rgba(255,82,82,0.1); color: var(--error); border: 1px solid rgba(255,82,82,0.3);">
+                                <i class="fas fa-eraser"></i> مسح
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sample Digits -->
+                    <div class="config-group">
+                        <div class="config-label" style="margin-bottom: 0.5rem;">
+                            <i class="fas fa-th" style="color: var(--primary-light)"></i>
+                            أمثلة جاهزة (0-9)
+                        </div>
+                        <div class="cnn-samples-grid" id="cnn-samples-grid">
+                            <!-- 10 digit buttons populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="config-divider"></div>
+
+                    <!-- Network Settings -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            عدد الفلاتر (Filters)
+                            <span class="config-value" id="cnn-val-filters">2</span>
+                        </div>
+                        <input type="range" class="config-slider" id="cnn-config-filters" min="1" max="8" value="2">
+                    </div>
+
+                    <div class="config-group">
+                        <div class="config-label">
+                            حجم الفلتر (Filter Size)
+                            <span class="config-value" id="cnn-val-filtersize">3×3</span>
+                        </div>
+                        <input type="range" class="config-slider" id="cnn-config-filtersize" min="2" max="4" value="3">
+                    </div>
+
+                    <div class="config-group">
+                        <div class="config-label">
+                            حجم التجميع (Pool Size)
+                            <span class="config-value" id="cnn-val-poolsize">2×2</span>
+                        </div>
+                        <input type="range" class="config-slider" id="cnn-config-poolsize" min="2" max="3" value="2">
+                    </div>
+
+                    <div class="config-group">
+                        <div class="config-label">نوع التجميع (Pool Type)</div>
+                        <select class="dnn-select" id="cnn-pool-type">
+                            <option value="max">Max Pooling (الأقصى)</option>
+                            <option value="average">Average Pooling (المتوسط)</option>
+                        </select>
+                    </div>
+
+                    <div class="config-divider"></div>
+
+                    <!-- Network Summary -->
+                    <div class="cnn-summary" id="cnn-summary">
+                        <div class="cnn-summary-title"><i class="fas fa-info-circle"></i> ملخص الشبكة</div>
+                        <div class="cnn-summary-text" id="cnn-summary-text">قم ببناء الشبكة...</div>
+                    </div>
+
+                    <button class="btn btn-primary cnn-run-btn" id="cnn-btn-run" style="width: 100%; justify-content: center; margin-top: auto;">
+                        <i class="fas fa-play"></i> تشغيل الشبكة
+                    </button>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
     <!-- COMPUTATION CHOICE MODAL -->
     <!-- ========================================== -->
     <div class="comp-modal-overlay" id="comp-modal">
@@ -910,6 +1051,8 @@
     <script src="js/backprop.js"></script>
     <script src="js/dnn-builder.js"></script>
     <script src="js/dnn-training.js"></script>
+    <script src="js/cnn-builder.js"></script>
+    <script src="js/cnn-visualizer.js"></script>
     <script src="js/concepts-interactive.js"></script>
     <script src="js/main.js"></script>
 </body>

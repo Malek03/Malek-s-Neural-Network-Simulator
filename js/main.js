@@ -59,7 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // 6. DNN Simulator Initialization
   initDNNSimulator();
 
-  // 7. Concept Cards Interactive Visualizations
+  // 7. CNN Simulator Initialization
+  initCNNSimulator();
+
+  // 8. Concept Cards Interactive Visualizations
   if (typeof ConceptCards !== 'undefined') {
     ConceptCards.init();
   }
@@ -789,4 +792,265 @@ function initDNNSimulator() {
 
   // Automatically build the initial network so the data table populates
   setTimeout(() => dnnBuildBtn.click(), 100);
+}
+
+/* ============================================
+   CNN Simulator Initialization
+   ============================================ */
+
+function initCNNSimulator() {
+  const cnnCard = document.getElementById('cnn-card');
+  const cnnOverlay = document.getElementById('cnn-simulator-overlay');
+  const cnnCloseBtn = document.getElementById('cnn-close-sim');
+  const cnnRunBtn = document.getElementById('cnn-btn-run');
+
+  if (!cnnCard || !cnnOverlay) return;
+
+  const cnnBuilder = new CNNBuilder();
+  const cnnVisualizer = new CNNVisualizer('cnn-viewport');
+  window._cnnVisualizer = cnnVisualizer; // for pipeline node clicks
+
+  // Drawing state
+  let drawGrid = new Array(25).fill(0);
+  let isDrawing = false;
+  let drawMode = 1; // 1 = paint, 0 = erase
+
+  // ── Open / Close ──
+  cnnCard.addEventListener('click', () => {
+    cnnOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    initDrawingCanvas();
+    initSampleDigits();
+    updateCNNConfigUI();
+  });
+
+  cnnCloseBtn.addEventListener('click', () => {
+    cnnOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+    cnnVisualizer.stopPlay();
+  });
+
+  // ── Drawing Canvas ──
+  function initDrawingCanvas() {
+    const grid = document.getElementById('cnn-draw-grid');
+    if (!grid || grid.children.length > 0) return;
+
+    for (let i = 0; i < 25; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cnn-draw-cell';
+      cell.dataset.idx = i;
+
+      cell.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        isDrawing = true;
+        drawMode = drawGrid[i] === 1 ? 0 : 1;
+        drawGrid[i] = drawMode;
+        updateDrawCell(cell, drawMode);
+      });
+
+      cell.addEventListener('mouseenter', () => {
+        if (isDrawing) {
+          drawGrid[parseInt(cell.dataset.idx)] = drawMode;
+          updateDrawCell(cell, drawMode);
+        }
+      });
+
+      // Touch support
+      cell.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        isDrawing = true;
+        drawMode = drawGrid[i] === 1 ? 0 : 1;
+        drawGrid[i] = drawMode;
+        updateDrawCell(cell, drawMode);
+      });
+
+      grid.appendChild(cell);
+    }
+
+    document.addEventListener('mouseup', () => { isDrawing = false; });
+    document.addEventListener('touchend', () => { isDrawing = false; });
+
+    // Handle touch move for drawing
+    grid.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!isDrawing) return;
+      const touch = e.touches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (target && target.classList.contains('cnn-draw-cell')) {
+        const idx = parseInt(target.dataset.idx);
+        drawGrid[idx] = drawMode;
+        updateDrawCell(target, drawMode);
+      }
+    });
+
+    // Clear button
+    document.getElementById('cnn-clear-canvas').addEventListener('click', () => {
+      drawGrid.fill(0);
+      grid.querySelectorAll('.cnn-draw-cell').forEach(c => {
+        c.classList.remove('active');
+      });
+      // Clear sample selection
+      document.querySelectorAll('.cnn-sample-btn').forEach(b => b.classList.remove('active'));
+    });
+  }
+
+  function updateDrawCell(cell, val) {
+    if (val === 1) {
+      cell.classList.add('active');
+    } else {
+      cell.classList.remove('active');
+    }
+  }
+
+  function setDrawGrid(matrix) {
+    const grid = document.getElementById('cnn-draw-grid');
+    if (!grid) return;
+    const cells = grid.querySelectorAll('.cnn-draw-cell');
+    for (let i = 0; i < 5; i++) {
+      for (let j = 0; j < 5; j++) {
+        const idx = i * 5 + j;
+        drawGrid[idx] = matrix[i][j];
+        updateDrawCell(cells[idx], matrix[i][j]);
+      }
+    }
+  }
+
+  function getDrawMatrix() {
+    const matrix = [];
+    for (let i = 0; i < 5; i++) {
+      matrix[i] = [];
+      for (let j = 0; j < 5; j++) {
+        matrix[i][j] = drawGrid[i * 5 + j];
+      }
+    }
+    return matrix;
+  }
+
+  // ── Sample Digits ──
+  function initSampleDigits() {
+    const samplesGrid = document.getElementById('cnn-samples-grid');
+    if (!samplesGrid || samplesGrid.children.length > 0) return;
+
+    const digits = CNNBuilder.getSampleDigits();
+    for (let d = 0; d <= 9; d++) {
+      const btn = document.createElement('button');
+      btn.className = 'cnn-sample-btn';
+      btn.innerText = d;
+      btn.dataset.digit = d;
+
+      btn.addEventListener('click', () => {
+        // Highlight active
+        document.querySelectorAll('.cnn-sample-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // Load digit into draw grid
+        setDrawGrid(digits[d]);
+      });
+
+      samplesGrid.appendChild(btn);
+    }
+  }
+
+  // ── Config Controls ──
+  const filtersSlider = document.getElementById('cnn-config-filters');
+  const filtersVal = document.getElementById('cnn-val-filters');
+  const filterSizeSlider = document.getElementById('cnn-config-filtersize');
+  const filterSizeVal = document.getElementById('cnn-val-filtersize');
+  const poolSizeSlider = document.getElementById('cnn-config-poolsize');
+  const poolSizeVal = document.getElementById('cnn-val-poolsize');
+  const poolTypeSelect = document.getElementById('cnn-pool-type');
+
+  filtersSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    filtersVal.innerText = val;
+    cnnBuilder.setNumFilters(val);
+  });
+
+  filterSizeSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    filterSizeVal.innerText = val + '×' + val;
+    cnnBuilder.setFilterSize(val);
+  });
+
+  poolSizeSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    poolSizeVal.innerText = val + '×' + val;
+    cnnBuilder.setPoolSize(val);
+  });
+
+  poolTypeSelect.addEventListener('change', (e) => {
+    cnnBuilder.setPoolType(e.target.value);
+  });
+
+  function updateCNNConfigUI() {
+    filtersSlider.value = cnnBuilder.config.numFilters;
+    filtersVal.innerText = cnnBuilder.config.numFilters;
+    filterSizeSlider.value = cnnBuilder.config.filterSize;
+    filterSizeVal.innerText = cnnBuilder.config.filterSize + '×' + cnnBuilder.config.filterSize;
+    poolSizeSlider.value = cnnBuilder.config.poolSize;
+    poolSizeVal.innerText = cnnBuilder.config.poolSize + '×' + cnnBuilder.config.poolSize;
+    poolTypeSelect.value = cnnBuilder.config.poolType;
+  }
+
+  // ── Run CNN ──
+  cnnRunBtn.addEventListener('click', () => {
+    const inputMatrix = getDrawMatrix();
+
+    // Check if anything is drawn
+    const hasPixels = drawGrid.some(v => v === 1);
+    if (!hasPixels) {
+      alert('الرجاء رسم رقم أو اختيار مثال أولاً');
+      return;
+    }
+
+    // Build network
+    cnnBuilder.build();
+
+    // Update summary
+    const summary = cnnBuilder.getSummary();
+    const summaryText = document.getElementById('cnn-summary-text');
+    if (summaryText && summary) {
+      summaryText.innerHTML = `
+        <div style="margin-bottom: 0.3rem;"><b>Pipeline:</b></div>
+        <div style="direction: ltr; text-align: left; margin-bottom: 0.5rem;">${summary.pipeline}</div>
+        <div><b>المعاملات:</b> ${summary.totalParams} (فلاتر: ${summary.filterParams} + FC: ${summary.fcParams})</div>
+      `;
+    }
+
+    // Init visualizer
+    cnnVisualizer.init(cnnBuilder);
+
+    // Run pipeline
+    cnnVisualizer.run(inputMatrix);
+
+    // Render pipeline overview
+    cnnVisualizer.renderPipelineOverview('cnn-pipeline-bar');
+
+    // Create step dots
+    const dotsContainer = document.getElementById('cnn-step-dots');
+    if (dotsContainer) {
+      dotsContainer.innerHTML = '';
+      for (let i = 0; i < cnnVisualizer.totalSteps; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'cnn-step-dot' + (i === 0 ? ' active' : '');
+        dot.title = `الخطوة ${i + 1}`;
+        dot.addEventListener('click', () => {
+          cnnVisualizer.goToStep(i);
+        });
+        dotsContainer.appendChild(dot);
+      }
+    }
+  });
+
+  // ── Step Navigation ──
+  document.getElementById('cnn-prev-btn').addEventListener('click', () => {
+    cnnVisualizer.prev();
+  });
+
+  document.getElementById('cnn-next-btn').addEventListener('click', () => {
+    cnnVisualizer.next();
+  });
+
+  document.getElementById('cnn-play-btn').addEventListener('click', () => {
+    cnnVisualizer.togglePlay();
+  });
 }
