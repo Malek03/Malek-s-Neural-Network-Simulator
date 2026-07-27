@@ -46,6 +46,70 @@ class CNNBuilder {
     this.config.poolType = type; // 'max' or 'average'
   }
 
+  // ── Educational Predefined Filters ──
+  getEducationalFilter(index, size) {
+    const filter = [];
+    let name = `فلتر عشوائي (${size}×${size})`;
+    
+    // Initialize with zeros
+    for(let i=0; i<size; i++) {
+        filter[i] = new Array(size).fill(0);
+    }
+    
+    if (index === 0) {
+        name = 'كاشف الحواف الرأسية (Vertical Edge)';
+        for(let i=0; i<size; i++) {
+            filter[i][0] = 1;
+            filter[i][size-1] = -1;
+        }
+    } else if (index === 1) {
+        name = 'كاشف الحواف الأفقية (Horizontal Edge)';
+        for(let j=0; j<size; j++) {
+            filter[0][j] = 1;
+            filter[size-1][j] = -1;
+        }
+    } else if (index === 2) {
+        name = 'كاشف الحواف القطرية (Main Diagonal)';
+        for(let i=0; i<size; i++) {
+            filter[i][i] = 1;
+            if (i < size - 1) filter[i][i+1] = -1;
+            if (i > 0) filter[i][i-1] = -1;
+        }
+    } else if (index === 3) {
+        name = 'كاشف الحواف القطرية العكسية (Anti-Diagonal)';
+        for(let i=0; i<size; i++) {
+            filter[size - 1 - i][i] = 1;
+            if (i < size - 1) filter[size - 1 - i - 1][i] = -1;
+        }
+    } else if (index === 4) {
+        name = 'كاشف النقاط / الزوايا (Point/Corner)';
+        let center = Math.floor(size/2);
+        for(let i=0; i<size; i++) {
+            for(let j=0; j<size; j++) {
+                filter[i][j] = -1;
+            }
+        }
+        filter[center][center] = size * size - 1;
+    } else if (index === 5) {
+        name = 'فلتر التوضيح (Sharpen)';
+        let center = Math.floor(size/2);
+        for(let i=0; i<size; i++) {
+            for(let j=0; j<size; j++) {
+                filter[i][j] = (i === center || j === center) ? -1 : 0;
+            }
+        }
+        filter[center][center] = size * 2 - 1;
+    } else {
+        name = `فلتر عشوائي (${index + 1})`;
+        for(let i=0; i<size; i++) {
+            for(let j=0; j<size; j++) {
+                filter[i][j] = parseFloat((Math.random() * 2 - 1).toFixed(4));
+            }
+        }
+    }
+    return { matrix: filter, name };
+  }
+
   // ── Build Network ──
 
   build() {
@@ -56,17 +120,13 @@ class CNNBuilder {
     const poolOutSize = Math.floor(convOutSize / poolSize);
     const flattenSize = poolOutSize * poolOutSize * numFilters;
 
-    // Initialize filters (random weights)
+    // Initialize filters (educational predefined features)
     const filters = [];
+    const filterNames = [];
     for (let f = 0; f < numFilters; f++) {
-      const filter = [];
-      for (let i = 0; i < filterSize; i++) {
-        filter[i] = [];
-        for (let j = 0; j < filterSize; j++) {
-          filter[i][j] = parseFloat((Math.random() * 2 - 1).toFixed(4));
-        }
-      }
-      filters.push(filter);
+      const edFilter = this.getEducationalFilter(f, filterSize);
+      filters.push(edFilter.matrix);
+      filterNames.push(edFilter.name);
     }
 
     // Initialize conv biases
@@ -81,6 +141,7 @@ class CNNBuilder {
 
     this.network = {
       filters,
+      filterNames,
       convBiases,
       fcWeights,
       fcBiases,

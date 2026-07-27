@@ -68,6 +68,7 @@ class CNNVisualizer {
         subtitle: `انزلاق الفلتر ${this.cnnBuilder.config.filterSize}×${this.cnnBuilder.config.filterSize} على الصورة مع حساب حاصل ضرب العناصر وجمعها`,
         data: result.convResults[f],
         filter: this.cnnBuilder.network.filters[f],
+        filterName: this.cnnBuilder.network.filterNames[f],
         bias: this.cnnBuilder.network.convBiases[f],
         filterIndex: f,
         featureMap: result.convFeatureMaps[f],
@@ -283,7 +284,7 @@ class CNNVisualizer {
   }
 
   renderConvolutionStep(container, step) {
-    const { filter, bias, featureMap, inputImage, data } = step;
+    const { filter, bias, featureMap, inputImage, data, filterName } = step;
     const filterGrid = this.buildGridHTML(filter, 'filter');
     const inputGrid = this.buildGridHTML(inputImage, 'input');
     const featureGrid = this.buildGridHTML(featureMap, 'heatmap');
@@ -324,6 +325,7 @@ class CNNVisualizer {
             <div class="cnn-matrix-label" style="color: var(--warning)">الفلتر ${step.filterIndex + 1}</div>
             ${filterGrid}
             <div class="cnn-matrix-dims">Bias: ${bias.toFixed(4)}</div>
+            <div style="font-size: 0.75rem; color: var(--warning); margin-top: 5px; font-weight: 700;">${filterName}</div>
           </div>
           <div class="cnn-conv-operator">
             <i class="fas fa-equals"></i>
@@ -338,6 +340,10 @@ class CNNVisualizer {
           <code>Output[i,j] = Σ(Input_region × Filter) + Bias</code>
         </div>
         ${stepsDetailHTML}
+      </div>
+      <div class="cnn-info-box">
+        <i class="fas fa-search" style="color: var(--warning)"></i>
+        <span>هذا الفلتر يمثل <b>${filterName}</b>. يبحث الفلتر عن هذا النمط المعين في الصورة من خلال ضرب القيم، مما يؤدي إلى تضخيم النتيجة (إضاءة البكسل) عند تطابق النمط.</span>
       </div>
     `;
   }
