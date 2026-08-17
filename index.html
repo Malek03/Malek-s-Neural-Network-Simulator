@@ -1001,6 +1001,15 @@
 
                     <div class="config-divider"></div>
 
+                    <!-- Pre-built Architectures Button -->
+                    <div class="config-group">
+                        <button class="arch-trigger-btn" id="cnn-arch-btn">
+                            <i class="fas fa-cubes"></i>
+                            هياكل جاهزة
+                            <span class="arch-btn-badge">8</span>
+                        </button>
+                    </div>
+
                     <!-- Network Summary -->
                     <div class="cnn-summary" id="cnn-summary">
                         <div class="cnn-summary-title"><i class="fas fa-info-circle"></i> ملخص الشبكة</div>
@@ -1012,6 +1021,24 @@
                     </button>
                 </div>
                 
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CNN ARCHITECTURES MODAL -->
+    <!-- ========================================== -->
+    <div class="arch-modal-overlay" id="cnn-arch-modal">
+        <div class="arch-modal-container">
+            <div class="arch-modal-header">
+                <div class="arch-modal-title">
+                    <i class="fas fa-cubes" style="color: var(--accent)"></i>
+                    هياكل CNN الجاهزة - Pre-built Architectures
+                </div>
+                <button class="arch-modal-close" id="cnn-arch-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="arch-content" id="arch-content">
+                <!-- Populated by JS -->
             </div>
         </div>
     </div>
@@ -1098,6 +1125,7 @@
     <script src="js/dnn-training.js"></script>
     <script src="js/cnn-builder.js"></script>
     <script src="js/cnn-visualizer.js"></script>
+    <script src="js/cnn-architectures.js"></script>
     <script src="js/concepts-interactive.js"></script>
     <script src="js/main.js"></script>
 </body>

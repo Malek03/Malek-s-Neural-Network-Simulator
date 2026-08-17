@@ -810,6 +810,36 @@ function initCNNSimulator() {
   const cnnVisualizer = new CNNVisualizer('cnn-viewport');
   window._cnnVisualizer = cnnVisualizer; // for pipeline node clicks
 
+  // CNN Architectures
+  const cnnArchitectures = new CNNArchitectures('cnn-arch-modal');
+  window._cnnArchitectures = cnnArchitectures; // for onclick in rendered HTML
+
+  const archBtn = document.getElementById('cnn-arch-btn');
+  const archCloseBtn = document.getElementById('cnn-arch-close');
+
+  if (archBtn) {
+    archBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cnnArchitectures.open();
+    });
+  }
+
+  if (archCloseBtn) {
+    archCloseBtn.addEventListener('click', () => {
+      cnnArchitectures.close();
+    });
+  }
+
+  // Close arch modal on overlay click
+  const archModal = document.getElementById('cnn-arch-modal');
+  if (archModal) {
+    archModal.addEventListener('click', (e) => {
+      if (e.target === archModal) {
+        cnnArchitectures.close();
+      }
+    });
+  }
+
   // Drawing state
   let drawGrid = new Array(25).fill(0);
   let isDrawing = false;
