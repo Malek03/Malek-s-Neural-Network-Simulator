@@ -840,10 +840,136 @@ function initCNNSimulator() {
     });
   }
 
-  // Drawing state
-  let drawGrid = new Array(25).fill(0);
+  // ── Tabs ──
+  const tabInput = document.getElementById('cnn-tab-input');
+  const tabArch = document.getElementById('cnn-tab-arch');
+  const contentInput = document.getElementById('cnn-content-input');
+  const contentArch = document.getElementById('cnn-content-arch');
+
+  if(tabInput) {
+      tabInput.addEventListener('click', () => {
+          tabInput.classList.add('active');
+          tabArch.classList.remove('active');
+          contentInput.classList.add('active');
+          contentArch.classList.remove('active');
+      });
+  }
+  if(tabArch) {
+      tabArch.addEventListener('click', () => {
+          tabArch.classList.add('active');
+          tabInput.classList.remove('active');
+          contentArch.classList.add('active');
+          contentInput.classList.remove('active');
+      });
+  }
+
+  // ── Grid Size & Drawing state ──
+  let gridSize = 5;
+  let drawGrid = new Array(gridSize * gridSize).fill(0);
   let isDrawing = false;
   let drawMode = 1; // 1 = paint, 0 = erase
+  let inputMode = 'draw'; // 'draw' or 'image'
+  let uploadedImageMatrix = null;
+
+  const gridSizeSelect = document.getElementById('cnn-grid-size-select');
+  if(gridSizeSelect) {
+      gridSizeSelect.addEventListener('change', (e) => {
+          gridSize = parseInt(e.target.value);
+          cnnBuilder.setInputSize(gridSize);
+          drawGrid = new Array(gridSize * gridSize).fill(0);
+          inputMode = 'draw';
+          uploadedImageMatrix = null;
+          document.getElementById('cnn-image-preview-container').style.display = 'none';
+          initDrawingCanvas();
+      });
+  }
+
+  // ── Image Upload ──
+  const imageUpload = document.getElementById('cnn-image-upload');
+  const imagePreview = document.getElementById('cnn-image-preview-canvas');
+  const imagePreviewContainer = document.getElementById('cnn-image-preview-container');
+  const thresholdSlider = document.getElementById('cnn-threshold-slider');
+  const thresholdVal = document.getElementById('cnn-threshold-val');
+  let currentImageSrc = null;
+
+  if (imageUpload) {
+      imageUpload.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = function(event) {
+              const img = new Image();
+              img.onload = function() {
+                  currentImageSrc = img;
+                  processUploadedImage();
+              }
+              img.src = event.target.result;
+          }
+          reader.readAsDataURL(file);
+      });
+  }
+
+  if (thresholdSlider) {
+      thresholdSlider.addEventListener('input', (e) => {
+          thresholdVal.innerText = e.target.value;
+          if (currentImageSrc) processUploadedImage();
+      });
+  }
+
+  function processUploadedImage() {
+      if(!currentImageSrc) return;
+      
+      const ctx = imagePreview.getContext('2d');
+      imagePreview.width = gridSize;
+      imagePreview.height = gridSize;
+      
+      // Draw image scaled down
+      ctx.drawImage(currentImageSrc, 0, 0, gridSize, gridSize);
+      
+      const imageData = ctx.getImageData(0, 0, gridSize, gridSize);
+      const data = imageData.data;
+      const threshold = parseInt(thresholdSlider.value);
+      
+      uploadedImageMatrix = [];
+      let flatIndex = 0;
+      
+      for (let i = 0; i < gridSize; i++) {
+          uploadedImageMatrix[i] = [];
+          for (let j = 0; j < gridSize; j++) {
+              const r = data[(i * gridSize + j) * 4];
+              const g = data[(i * gridSize + j) * 4 + 1];
+              const b = data[(i * gridSize + j) * 4 + 2];
+              // grayscale
+              const gray = 0.299*r + 0.587*g + 0.114*b;
+              // binarize (invert so dark ink is 1)
+              const val = gray < threshold ? 1 : 0;
+              
+              uploadedImageMatrix[i][j] = val;
+              
+              // update preview to show binarized result
+              const c = val === 1 ? 0 : 255;
+              data[(i * gridSize + j) * 4] = c;
+              data[(i * gridSize + j) * 4 + 1] = c;
+              data[(i * gridSize + j) * 4 + 2] = c;
+              data[(i * gridSize + j) * 4 + 3] = 255; // alpha
+              
+              drawGrid[flatIndex++] = val;
+          }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      imagePreviewContainer.style.display = 'block';
+      inputMode = 'image';
+      
+      // Update draw grid visually
+      const cells = document.querySelectorAll('.cnn-draw-cell');
+      if(cells.length === gridSize*gridSize) {
+          cells.forEach((cell, idx) => {
+              if(drawGrid[idx] === 1) cell.classList.add('active');
+              else cell.classList.remove('active');
+          });
+      }
+  }
 
   // ── Open / Close ──
   cnnCard.addEventListener('click', () => {
@@ -851,7 +977,7 @@ function initCNNSimulator() {
     document.body.style.overflow = 'hidden';
     initDrawingCanvas();
     initSampleDigits();
-    updateCNNConfigUI();
+    renderArchBuilder();
   });
 
   cnnCloseBtn.addEventListener('click', () => {
@@ -863,15 +989,20 @@ function initCNNSimulator() {
   // ── Drawing Canvas ──
   function initDrawingCanvas() {
     const grid = document.getElementById('cnn-draw-grid');
-    if (!grid || grid.children.length > 0) return;
-
-    for (let i = 0; i < 25; i++) {
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    grid.className = `cnn-draw-grid cnn-grid-${gridSize}`;
+    
+    for (let i = 0; i < gridSize * gridSize; i++) {
       const cell = document.createElement('div');
       cell.className = 'cnn-draw-cell';
+      if(drawGrid[i] === 1) cell.classList.add('active');
       cell.dataset.idx = i;
 
       cell.addEventListener('mousedown', (e) => {
         e.preventDefault();
+        inputMode = 'draw';
         isDrawing = true;
         drawMode = drawGrid[i] === 1 ? 0 : 1;
         drawGrid[i] = drawMode;
@@ -888,6 +1019,7 @@ function initCNNSimulator() {
       // Touch support
       cell.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        inputMode = 'draw';
         isDrawing = true;
         drawMode = drawGrid[i] === 1 ? 0 : 1;
         drawGrid[i] = drawMode;
@@ -914,43 +1046,61 @@ function initCNNSimulator() {
     });
 
     // Clear button
-    document.getElementById('cnn-clear-canvas').addEventListener('click', () => {
-      drawGrid.fill(0);
-      grid.querySelectorAll('.cnn-draw-cell').forEach(c => {
-        c.classList.remove('active');
-      });
-      // Clear sample selection
-      document.querySelectorAll('.cnn-sample-btn').forEach(b => b.classList.remove('active'));
-    });
+    const clearBtn = document.getElementById('cnn-clear-canvas');
+    if (clearBtn) {
+        // remove old listeners by replacing node
+        const newClearBtn = clearBtn.cloneNode(true);
+        clearBtn.parentNode.replaceChild(newClearBtn, clearBtn);
+        
+        newClearBtn.addEventListener('click', () => {
+          drawGrid.fill(0);
+          grid.querySelectorAll('.cnn-draw-cell').forEach(c => c.classList.remove('active'));
+          document.querySelectorAll('.cnn-sample-btn').forEach(b => b.classList.remove('active'));
+          inputMode = 'draw';
+          uploadedImageMatrix = null;
+          document.getElementById('cnn-image-preview-container').style.display = 'none';
+          currentImageSrc = null;
+          if(imageUpload) imageUpload.value = '';
+        });
+    }
   }
 
   function updateDrawCell(cell, val) {
-    if (val === 1) {
-      cell.classList.add('active');
-    } else {
-      cell.classList.remove('active');
-    }
+    if (val === 1) cell.classList.add('active');
+    else cell.classList.remove('active');
   }
 
   function setDrawGrid(matrix) {
-    const grid = document.getElementById('cnn-draw-grid');
-    if (!grid) return;
-    const cells = grid.querySelectorAll('.cnn-draw-cell');
-    for (let i = 0; i < 5; i++) {
-      for (let j = 0; j < 5; j++) {
-        const idx = i * 5 + j;
-        drawGrid[idx] = matrix[i][j];
-        updateDrawCell(cells[idx], matrix[i][j]);
-      }
+    // Only works if grid is same size, assume samples are 5x5
+    if (gridSize !== 5) {
+        gridSizeSelect.value = "5";
+        gridSizeSelect.dispatchEvent(new Event('change'));
     }
+    
+    inputMode = 'draw';
+    setTimeout(() => {
+        const grid = document.getElementById('cnn-draw-grid');
+        if (!grid) return;
+        const cells = grid.querySelectorAll('.cnn-draw-cell');
+        for (let i = 0; i < 5; i++) {
+          for (let j = 0; j < 5; j++) {
+            const idx = i * 5 + j;
+            drawGrid[idx] = matrix[i][j];
+            if (cells[idx]) updateDrawCell(cells[idx], matrix[i][j]);
+          }
+        }
+    }, 50);
   }
 
   function getDrawMatrix() {
+    if (inputMode === 'image' && uploadedImageMatrix) {
+        return uploadedImageMatrix;
+    }
     const matrix = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < gridSize; i++) {
       matrix[i] = [];
-      for (let j = 0; j < 5; j++) {
-        matrix[i][j] = drawGrid[i * 5 + j];
+      for (let j = 0; j < gridSize; j++) {
+        matrix[i][j] = drawGrid[i * gridSize + j];
       }
     }
     return matrix;
@@ -969,10 +1119,8 @@ function initCNNSimulator() {
       btn.dataset.digit = d;
 
       btn.addEventListener('click', () => {
-        // Highlight active
         document.querySelectorAll('.cnn-sample-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        // Load digit into draw grid
         setDrawGrid(digits[d]);
       });
 
@@ -980,45 +1128,112 @@ function initCNNSimulator() {
     }
   }
 
-  // ── Config Controls ──
-  const filtersSlider = document.getElementById('cnn-config-filters');
-  const filtersVal = document.getElementById('cnn-val-filters');
-  const filterSizeSlider = document.getElementById('cnn-config-filtersize');
-  const filterSizeVal = document.getElementById('cnn-val-filtersize');
-  const poolSizeSlider = document.getElementById('cnn-config-poolsize');
-  const poolSizeVal = document.getElementById('cnn-val-poolsize');
-  const poolTypeSelect = document.getElementById('cnn-pool-type');
+  // ── Architecture Builder ──
+  function renderArchBuilder() {
+     const list = document.getElementById('cnn-arch-builder-list');
+     if(!list) return;
+     list.innerHTML = '';
 
-  filtersSlider.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value);
-    filtersVal.innerText = val;
-    cnnBuilder.setNumFilters(val);
-  });
+     cnnBuilder.layers.forEach((layer, index) => {
+        const card = document.createElement('div');
+        card.className = 'cnn-layer-card';
+        
+        let titleHtml = '';
+        let settingsHtml = '';
 
-  filterSizeSlider.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value);
-    filterSizeVal.innerText = val + '×' + val;
-    cnnBuilder.setFilterSize(val);
-  });
+        if(layer.type === 'conv2d') {
+            titleHtml = `<div class="cnn-layer-title conv2d"><i class="fas fa-asterisk"></i> Conv2D</div>`;
+            settingsHtml = `
+               <div class="cnn-layer-setting-group">Filters: <input type="number" class="cnn-layer-input" value="${layer.filters}" min="1" max="16" onchange="window._cnnBuilderUpdate(${index}, 'filters', this.value)"></div>
+               <div class="cnn-layer-setting-group">Size: <input type="number" class="cnn-layer-input" value="${layer.size}" min="2" max="5" onchange="window._cnnBuilderUpdate(${index}, 'size', this.value)"></div>
+               <div class="cnn-layer-setting-group">Act: 
+                  <select class="cnn-layer-select" onchange="window._cnnBuilderUpdate(${index}, 'activation', this.value)">
+                     <option value="none" ${layer.activation==='none'?'selected':''}>None</option>
+                     <option value="relu" ${layer.activation==='relu'?'selected':''}>ReLU</option>
+                     <option value="sigmoid" ${layer.activation==='sigmoid'?'selected':''}>Sigmoid</option>
+                  </select>
+               </div>
+            `;
+        } else if(layer.type === 'pool2d') {
+            titleHtml = `<div class="cnn-layer-title pool2d"><i class="fas fa-compress-arrows-alt"></i> Pool2D</div>`;
+            settingsHtml = `
+               <div class="cnn-layer-setting-group">Size: <input type="number" class="cnn-layer-input" value="${layer.size}" min="2" max="4" onchange="window._cnnBuilderUpdate(${index}, 'size', this.value)"></div>
+               <div class="cnn-layer-setting-group">Type: 
+                  <select class="cnn-layer-select" onchange="window._cnnBuilderUpdate(${index}, 'poolType', this.value)">
+                     <option value="max" ${layer.poolType==='max'?'selected':''}>Max</option>
+                     <option value="average" ${layer.poolType==='average'?'selected':''}>Avg</option>
+                  </select>
+               </div>
+            `;
+        } else if(layer.type === 'flatten') {
+            titleHtml = `<div class="cnn-layer-title flatten"><i class="fas fa-arrows-alt-h"></i> Flatten</div>`;
+            settingsHtml = `<div style="font-size:0.75rem; color:var(--text-muted)">تحويل المصفوفة إلى متجه</div>`;
+        } else if(layer.type === 'fc') {
+            titleHtml = `<div class="cnn-layer-title fc"><i class="fas fa-project-diagram"></i> Fully Connected</div>`;
+            settingsHtml = `
+               <div class="cnn-layer-setting-group">Neurons: <input type="number" class="cnn-layer-input" value="${layer.neurons}" min="2" max="128" onchange="window._cnnBuilderUpdate(${index}, 'neurons', this.value)"></div>
+               <div class="cnn-layer-setting-group">Act: 
+                  <select class="cnn-layer-select" onchange="window._cnnBuilderUpdate(${index}, 'activation', this.value)">
+                     <option value="none" ${layer.activation==='none'?'selected':''}>None</option>
+                     <option value="relu" ${layer.activation==='relu'?'selected':''}>ReLU</option>
+                     <option value="softmax" ${layer.activation==='softmax'?'selected':''}>Softmax</option>
+                  </select>
+               </div>
+            `;
+        }
 
-  poolSizeSlider.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value);
-    poolSizeVal.innerText = val + '×' + val;
-    cnnBuilder.setPoolSize(val);
-  });
+        card.innerHTML = `
+          <div class="cnn-layer-header">
+             ${titleHtml}
+             <div class="cnn-layer-controls">
+                <button class="cnn-layer-btn" onclick="window._cnnBuilderMove(${index}, 'up')" ${index===0?'disabled':''}><i class="fas fa-chevron-up"></i></button>
+                <button class="cnn-layer-btn" onclick="window._cnnBuilderMove(${index}, 'down')" ${index===cnnBuilder.layers.length-1?'disabled':''}><i class="fas fa-chevron-down"></i></button>
+                <button class="cnn-layer-btn delete" onclick="window._cnnBuilderRemove(${index})"><i class="fas fa-times"></i></button>
+             </div>
+          </div>
+          <div class="cnn-layer-settings">${settingsHtml}</div>
+        `;
+        list.appendChild(card);
+     });
+     updateCNNSummaryUI();
+  }
 
-  poolTypeSelect.addEventListener('change', (e) => {
-    cnnBuilder.setPoolType(e.target.value);
-  });
+  // Global functions for inline HTML handlers
+  window._cnnBuilderUpdate = function(index, key, val) {
+      const v = (key === 'activation' || key === 'poolType') ? val : parseInt(val);
+      cnnBuilder.updateLayer(index, { [key]: v });
+      updateCNNSummaryUI();
+  };
+  window._cnnBuilderMove = function(index, dir) {
+      cnnBuilder.moveLayer(index, dir);
+      renderArchBuilder();
+  };
+  window._cnnBuilderRemove = function(index) {
+      cnnBuilder.removeLayer(index);
+      renderArchBuilder();
+  };
 
-  function updateCNNConfigUI() {
-    filtersSlider.value = cnnBuilder.config.numFilters;
-    filtersVal.innerText = cnnBuilder.config.numFilters;
-    filterSizeSlider.value = cnnBuilder.config.filterSize;
-    filterSizeVal.innerText = cnnBuilder.config.filterSize + '×' + cnnBuilder.config.filterSize;
-    poolSizeSlider.value = cnnBuilder.config.poolSize;
-    poolSizeVal.innerText = cnnBuilder.config.poolSize + '×' + cnnBuilder.config.poolSize;
-    poolTypeSelect.value = cnnBuilder.config.poolType;
+  document.getElementById('cnn-add-conv')?.addEventListener('click', () => { cnnBuilder.addLayer('conv2d'); renderArchBuilder(); });
+  document.getElementById('cnn-add-pool')?.addEventListener('click', () => { cnnBuilder.addLayer('pool2d'); renderArchBuilder(); });
+  document.getElementById('cnn-add-fc')?.addEventListener('click', () => { cnnBuilder.addLayer('fc'); renderArchBuilder(); });
+
+  function updateCNNSummaryUI() {
+      // Just a mock build to get summary
+      try {
+         cnnBuilder.build();
+         const summary = cnnBuilder.getSummary();
+         const summaryText = document.getElementById('cnn-summary-text');
+         if (summaryText && summary) {
+           summaryText.innerHTML = `
+             <div style="margin-bottom: 0.3rem; font-size: 0.8rem;"><b>المسار:</b></div>
+             <div style="direction: ltr; text-align: left; margin-bottom: 0.5rem; font-size: 0.75rem; word-break: break-word;">${summary.pipeline}</div>
+             <div style="font-size: 0.8rem;"><b>المعاملات:</b> ${summary.totalParams}</div>
+           `;
+         }
+      } catch(e) {
+         const summaryText = document.getElementById('cnn-summary-text');
+         if (summaryText) summaryText.innerHTML = `<div style="color:var(--error); font-size:0.8rem;">خطأ في الهيكل: ${e.message}</div>`;
+      }
   }
 
   // ── Run CNN ──

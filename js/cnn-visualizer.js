@@ -24,14 +24,12 @@ class CNNVisualizer {
   }
 
   // ── Initialize with builder ──
-
   init(cnnBuilder) {
     this.cnnBuilder = cnnBuilder;
     this.currentStep = 0;
   }
 
   // ── Run Pipeline & Build Visualization ──
-
   run(inputImage) {
     if (!this.cnnBuilder || !this.cnnBuilder.isBuilt) return;
 
@@ -48,88 +46,88 @@ class CNNVisualizer {
   }
 
   // ── Build Step Array ──
-
   buildSteps(result) {
     const steps = [];
+    let stepNumber = 1;
 
     // Step 0: Input image
     steps.push({
       type: 'input',
-      title: 'الخطوة 1: صورة الإدخال (Input Image)',
-      subtitle: `مصفوفة ${this.cnnBuilder.config.inputSize}×${this.cnnBuilder.config.inputSize} — القيم: 0 (أسود) و 1 (أبيض)`,
+      title: `الخطوة ${stepNumber++}: صورة الإدخال (Input Image)`,
+      subtitle: `مصفوفة ${this.cnnBuilder.config.inputSize}×${this.cnnBuilder.config.inputSize}`,
       data: result.input
     });
 
-    // Steps 1..N: Convolution for each filter
-    for (let f = 0; f < result.convResults.length; f++) {
-      steps.push({
-        type: 'convolution',
-        title: `الخطوة 2: التلافيف (Convolution) — فلتر ${f + 1}`,
-        subtitle: `انزلاق الفلتر ${this.cnnBuilder.config.filterSize}×${this.cnnBuilder.config.filterSize} على الصورة مع حساب حاصل ضرب العناصر وجمعها`,
-        data: result.convResults[f],
-        filter: this.cnnBuilder.network.filters[f],
-        filterName: this.cnnBuilder.network.filterNames[f],
-        bias: this.cnnBuilder.network.convBiases[f],
-        filterIndex: f,
-        featureMap: result.convFeatureMaps[f],
-        inputImage: result.input
-      });
-    }
-
-    // ReLU step
-    steps.push({
-      type: 'relu',
-      title: 'الخطوة 3: دالة التنشيط (ReLU)',
-      subtitle: 'تحويل القيم السالبة إلى صفر مع الإبقاء على القيم الموجبة — f(x) = max(0, x)',
-      data: result.reluResults,
-      beforeMaps: result.convFeatureMaps,
-      afterMaps: result.reluFeatureMaps
-    });
-
-    // MaxPooling step
-    steps.push({
-      type: 'pooling',
-      title: `الخطوة 4: التجميع ${this.cnnBuilder.config.poolType === 'max' ? 'الأقصى (Max Pooling)' : 'المتوسط (Average Pooling)'}`,
-      subtitle: `تقسيم كل Feature Map إلى مربعات ${this.cnnBuilder.config.poolSize}×${this.cnnBuilder.config.poolSize} واختيار ${this.cnnBuilder.config.poolType === 'max' ? 'القيمة الأكبر' : 'المتوسط'}`,
-      data: result.poolResults,
-      inputMaps: result.reluFeatureMaps,
-      outputMaps: result.poolFeatureMaps
-    });
-
-    // Flatten step
-    steps.push({
-      type: 'flatten',
-      title: 'الخطوة 5: التسطيح (Flatten)',
-      subtitle: `تحويل جميع Feature Maps من مصفوفات ثنائية الأبعاد إلى متجه أحادي البعد بطول ${result.flattenResult.vector.length}`,
-      data: result.flattenResult,
-      inputMaps: result.poolFeatureMaps
-    });
-
-    // FC + Softmax step
-    steps.push({
-      type: 'fc_softmax',
-      title: 'الخطوة 6: الطبقة المتصلة بالكامل (FC) + Softmax',
-      subtitle: 'حساب الاحتمالات لكل رقم (0-9) باستخدام طبقة كاملة الاتصال ودالة Softmax',
-      data: result.fcResult,
-      flatVector: result.flattenResult.vector
-    });
-
-    // Final prediction
-    steps.push({
-      type: 'prediction',
-      title: 'الخطوة 7: النتيجة النهائية (Prediction)',
-      subtitle: 'الرقم المتوقع بناءً على أعلى احتمال من Softmax',
-      data: {
-        prediction: result.prediction,
-        probabilities: result.probabilities
+    result.pipelineResults.forEach(pr => {
+      if (pr.type === 'conv2d') {
+        // Convolution for each filter
+        for (let f = 0; f < pr.config.filters; f++) {
+          steps.push({
+            type: 'convolution',
+            title: `الخطوة ${stepNumber++}: التلافيف (Conv2D) — فلتر ${f + 1}`,
+            subtitle: `انزلاق الفلتر ${pr.config.size}×${pr.config.size} على الإدخال مع حساب حاصل ضرب العناصر وجمعها`,
+            data: pr,
+            filterIndex: f,
+            filter: pr.meta.filters[f],
+            filterName: pr.meta.filterNames[f],
+            bias: pr.meta.biases[f],
+            featureMap: pr.featureMaps[f]
+          });
+        }
+        if (pr.activationType && pr.activationType !== 'none') {
+           steps.push({
+             type: 'activation',
+             title: `الخطوة ${stepNumber++}: دالة التنشيط (${pr.activationType.toUpperCase()})`,
+             subtitle: 'تطبيق دالة التنشيط على خرائط الميزات',
+             data: pr,
+             beforeMaps: pr.featureMaps,
+             afterMaps: pr.activatedMaps,
+             activationType: pr.activationType
+           });
+        }
+      } else if (pr.type === 'pool2d') {
+         steps.push({
+           type: 'pooling',
+           title: `الخطوة ${stepNumber++}: التجميع (${pr.config.poolType === 'max' ? 'Max Pooling' : 'Average Pooling'})`,
+           subtitle: `تقسيم كل Feature Map إلى مربعات واختيار القيمة الممثلة`,
+           data: pr,
+           inputMaps: pr.inputMaps,
+           outputMaps: pr.featureMaps
+         });
+      } else if (pr.type === 'flatten') {
+         steps.push({
+           type: 'flatten',
+           title: `الخطوة ${stepNumber++}: التسطيح (Flatten)`,
+           subtitle: `تحويل الخرائط إلى متجه أحادي البعد بطول ${pr.flatVector.length}`,
+           data: pr,
+           inputMaps: pr.inputMaps
+         });
+      } else if (pr.type === 'fc') {
+         steps.push({
+           type: 'fc',
+           title: `الخطوة ${stepNumber++}: الطبقة المتصلة بالكامل (FC)`,
+           subtitle: `حساب النتيجة للخلايا المتصلة بالكامل`,
+           data: pr,
+           flatVector: pr.flatVector
+         });
       }
     });
+
+    // Final prediction (find the last FC with softmax)
+    const lastFC = result.pipelineResults.slice().reverse().find(pr => pr.type === 'fc' && pr.config.activation === 'softmax');
+    if (lastFC) {
+      steps.push({
+        type: 'prediction',
+        title: `الخطوة ${stepNumber++}: النتيجة النهائية (Prediction)`,
+        subtitle: 'التصنيف المتوقع بناءً على أعلى احتمال',
+        data: lastFC
+      });
+    }
 
     return steps;
   }
 
   // ── Navigation ──
-
   next() {
     if (this.currentStep < this.totalSteps - 1) {
       this.currentStep++;
@@ -208,7 +206,6 @@ class CNNVisualizer {
   }
 
   // ── Render Current Step ──
-
   renderCurrentStep() {
     if (!this.container || !this.steps || this.currentStep >= this.steps.length) return;
 
@@ -239,8 +236,8 @@ class CNNVisualizer {
       case 'convolution':
         this.renderConvolutionStep(content, step);
         break;
-      case 'relu':
-        this.renderReLUStep(content, step);
+      case 'activation':
+        this.renderActivationStep(content, step);
         break;
       case 'pooling':
         this.renderPoolingStep(content, step);
@@ -248,8 +245,8 @@ class CNNVisualizer {
       case 'flatten':
         this.renderFlattenStep(content, step);
         break;
-      case 'fc_softmax':
-        this.renderFCSoftmaxStep(content, step);
+      case 'fc':
+        this.renderFCStep(content, step);
         break;
       case 'prediction':
         this.renderPredictionStep(content, step);
@@ -265,7 +262,6 @@ class CNNVisualizer {
   }
 
   // ── Step Renderers ──
-
   renderInputStep(container, step) {
     const gridHtml = this.buildGridHTML(step.data, 'input');
     container.innerHTML = `
@@ -278,15 +274,14 @@ class CNNVisualizer {
       </div>
       <div class="cnn-info-box">
         <i class="fas fa-info-circle"></i>
-        <span>كل خلية تمثل بكسل واحد. القيمة <code>1</code> (أخضر) = بكسل مفعّل، <code>0</code> (داكن) = خلفية فارغة.</span>
+        <span>عرض قيم البكسلات في الإدخال</span>
       </div>
     `;
   }
 
   renderConvolutionStep(container, step) {
-    const { filter, bias, featureMap, inputImage, data, filterName } = step;
+    const { filter, bias, featureMap, filterName, data, filterIndex } = step;
     const filterGrid = this.buildGridHTML(filter, 'filter');
-    const inputGrid = this.buildGridHTML(inputImage, 'input');
     const featureGrid = this.buildGridHTML(featureMap, 'heatmap');
 
     // Build convolution detail table
@@ -294,7 +289,12 @@ class CNNVisualizer {
     stepsDetailHTML += '<th>الموقع</th><th>منطقة الإدخال</th><th>× الفلتر</th><th>المجموع</th><th>+ الانحياز</th><th>النتيجة</th>';
     stepsDetailHTML += '</tr></thead><tbody>';
 
-    data.steps.forEach((s, idx) => {
+    const convSteps = data.convSteps.filter(s => s.filterIndex === filterIndex);
+    
+    // Limits steps if too many
+    const showSteps = convSteps.slice(0, 100);
+
+    showSteps.forEach((s, idx) => {
       const regionStr = s.inputRegion.map(r => '[' + r.map(v => v.toFixed(1)).join(', ') + ']').join('<br>');
       const filterStr = filter.map(r => '[' + r.map(v => v.toFixed(2)).join(', ') + ']').join('<br>');
       stepsDetailHTML += `
@@ -313,16 +313,12 @@ class CNNVisualizer {
     container.innerHTML = `
       <div class="cnn-conv-layout">
         <div class="cnn-conv-visual">
-          <div class="cnn-matrix-block">
-            <div class="cnn-matrix-label">الإدخال (Input)</div>
-            ${inputGrid}
-          </div>
           <div class="cnn-conv-operator">
             <i class="fas fa-asterisk"></i>
             <span>Conv2D</span>
           </div>
           <div class="cnn-matrix-block cnn-filter-block">
-            <div class="cnn-matrix-label" style="color: var(--warning)">الفلتر ${step.filterIndex + 1}</div>
+            <div class="cnn-matrix-label" style="color: var(--warning)">الفلتر ${filterIndex + 1}</div>
             ${filterGrid}
             <div class="cnn-matrix-dims">Bias: ${bias.toFixed(4)}</div>
             <div style="font-size: 0.75rem; color: var(--warning); margin-top: 5px; font-weight: 700;">${filterName}</div>
@@ -331,7 +327,7 @@ class CNNVisualizer {
             <i class="fas fa-equals"></i>
           </div>
           <div class="cnn-matrix-block cnn-feature-block">
-            <div class="cnn-matrix-label" style="color: var(--accent)">Feature Map ${step.filterIndex + 1}</div>
+            <div class="cnn-matrix-label" style="color: var(--accent)">Feature Map ${filterIndex + 1}</div>
             ${featureGrid}
             <div class="cnn-matrix-dims">${featureMap.length} × ${featureMap[0].length}</div>
           </div>
@@ -341,31 +337,30 @@ class CNNVisualizer {
         </div>
         ${stepsDetailHTML}
       </div>
-      <div class="cnn-info-box">
-        <i class="fas fa-search" style="color: var(--warning)"></i>
-        <span>هذا الفلتر يمثل <b>${filterName}</b>. يبحث الفلتر عن هذا النمط المعين في الصورة من خلال ضرب القيم، مما يؤدي إلى تضخيم النتيجة (إضاءة البكسل) عند تطابق النمط.</span>
-      </div>
     `;
   }
 
-  renderReLUStep(container, step) {
+  renderActivationStep(container, step) {
     let mapsHTML = '';
-    for (let f = 0; f < step.data.length; f++) {
+    const MAX_MAPS = 4;
+    const toShow = Math.min(step.data.config.filters, MAX_MAPS);
+    
+    for (let f = 0; f < toShow; f++) {
       const beforeGrid = this.buildGridHTML(step.beforeMaps[f], 'heatmap');
       const afterGrid = this.buildGridHTML(step.afterMaps[f], 'heatmap');
 
       mapsHTML += `
         <div class="cnn-relu-pair">
           <div class="cnn-matrix-block">
-            <div class="cnn-matrix-label">قبل ReLU (فلتر ${f + 1})</div>
+            <div class="cnn-matrix-label">قبل (فلتر ${f + 1})</div>
             ${beforeGrid}
           </div>
           <div class="cnn-relu-arrow">
             <i class="fas fa-arrow-left"></i>
-            <code>max(0, x)</code>
+            <code>${step.activationType}</code>
           </div>
           <div class="cnn-matrix-block cnn-relu-after">
-            <div class="cnn-matrix-label" style="color: var(--success)">بعد ReLU (فلتر ${f + 1})</div>
+            <div class="cnn-matrix-label" style="color: var(--success)">بعد (فلتر ${f + 1})</div>
             ${afterGrid}
           </div>
         </div>
@@ -376,24 +371,23 @@ class CNNVisualizer {
       <div class="cnn-relu-layout">
         ${mapsHTML}
       </div>
-      <div class="cnn-info-box">
-        <i class="fas fa-lightbulb" style="color: var(--warning)"></i>
-        <span>دالة <b>ReLU</b> تحوّل جميع القيم السالبة إلى <code>0</code> (الخلايا الحمراء تتحول لداكنة)، وتترك القيم الموجبة كما هي.</span>
-      </div>
     `;
   }
 
   renderPoolingStep(container, step) {
-    const poolType = this.cnnBuilder.config.poolType;
+    const poolType = step.data.config.poolType;
     let mapsHTML = '';
+    const MAX_MAPS = 4;
+    const toShow = Math.min(step.inputMaps.length, MAX_MAPS);
 
-    for (let f = 0; f < step.data.length; f++) {
+    for (let f = 0; f < toShow; f++) {
       const inputGrid = this.buildGridHTML(step.inputMaps[f], 'heatmap');
       const outputGrid = this.buildGridHTML(step.outputMaps[f], 'heatmap');
 
       // Build pool detail
       let poolDetail = '<div class="cnn-pool-detail">';
-      step.data[f].steps.forEach((s) => {
+      const fSteps = step.data.poolSteps.filter(s => s.filterIndex === f).slice(0,10);
+      fSteps.forEach((s) => {
         const regionVals = s.allValues.map(v => v.val.toFixed(2));
         const resultVal = poolType === 'max' ? s.maxVal : s.avgVal;
         poolDetail += `
@@ -409,7 +403,7 @@ class CNNVisualizer {
       mapsHTML += `
         <div class="cnn-pool-pair">
           <div class="cnn-matrix-block">
-            <div class="cnn-matrix-label">Feature Map ${f + 1} (بعد ReLU)</div>
+            <div class="cnn-matrix-label">Feature Map ${f + 1}</div>
             ${inputGrid}
           </div>
           <div class="cnn-relu-arrow">
@@ -437,7 +431,10 @@ class CNNVisualizer {
     
     // Visual: show maps being unfolded
     let mapsHTML = '';
-    for (let f = 0; f < step.inputMaps.length; f++) {
+    const MAX_MAPS = 4;
+    const toShow = Math.min(step.inputMaps.length, MAX_MAPS);
+    
+    for (let f = 0; f < toShow; f++) {
       const grid = this.buildGridHTML(step.inputMaps[f], 'heatmap');
       mapsHTML += `
         <div class="cnn-matrix-block cnn-flatten-source">
@@ -449,11 +446,14 @@ class CNNVisualizer {
 
     // Build vector display
     let vectorHTML = '<div class="cnn-flatten-vector">';
-    vector.forEach((val, idx) => {
-      const map = mapping[idx];
+    const showVec = vector.slice(0, 500); // limit to 500 for perf
+    showVec.forEach((val, idx) => {
       const color = this.getHeatmapColor(val, -1, 1);
-      vectorHTML += `<div class="cnn-flatten-cell" style="background:${color}" title="Filter ${map.filterIdx + 1} [${map.row},${map.col}] = ${val.toFixed(4)}">${val.toFixed(2)}</div>`;
+      vectorHTML += `<div class="cnn-flatten-cell" style="background:${color}" title="Index ${idx} = ${val.toFixed(4)}">${val.toFixed(2)}</div>`;
     });
+    if(vector.length > 500) {
+        vectorHTML += '<div style="padding:10px; color:#fff;">...</div>';
+    }
     vectorHTML += '</div>';
 
     container.innerHTML = `
@@ -470,65 +470,89 @@ class CNNVisualizer {
           المتجه الناتج: ${vector.length} قيمة
         </div>
       </div>
-      <div class="cnn-info-box">
-        <i class="fas fa-info-circle"></i>
-        <span>يتم تحويل جميع خرائط الميزات (Feature Maps) إلى متجه واحد لتمريره إلى الطبقة المتصلة بالكامل.</span>
-      </div>
     `;
   }
 
-  renderFCSoftmaxStep(container, step) {
-    const { probabilities, predictedClass, z } = step.data;
-    const labels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  renderFCStep(container, step) {
+    const { z, probabilities, prediction, details, config } = step.data;
+    const isSoftmax = config.activation === 'softmax';
 
-    // Build probability bars
-    let barsHTML = '';
-    const maxProb = Math.max(...probabilities);
+    let html = '';
     
-    for (let i = 0; i < probabilities.length; i++) {
-      const prob = probabilities[i];
-      const pct = (prob * 100).toFixed(1);
-      const isMax = i === predictedClass;
-      const barColor = isMax ? 'var(--success)' : 'var(--primary)';
-      const opacity = isMax ? 1 : 0.4 + (prob / maxProb) * 0.6;
+    if (isSoftmax) {
+        const labels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-      barsHTML += `
-        <div class="cnn-prob-row ${isMax ? 'cnn-prob-max' : ''}">
-          <div class="cnn-prob-label">${labels[i]}</div>
-          <div class="cnn-prob-bar-bg">
-            <div class="cnn-prob-bar-fill" style="width: ${pct}%; background: ${barColor}; opacity: ${opacity}"></div>
+        // Build probability bars
+        let barsHTML = '';
+        const maxProb = Math.max(...probabilities);
+        
+        for (let i = 0; i < probabilities.length; i++) {
+          const prob = probabilities[i];
+          const pct = (prob * 100).toFixed(1);
+          const isMax = i === prediction;
+          const barColor = isMax ? 'var(--success)' : 'var(--primary)';
+          const opacity = isMax ? 1 : 0.4 + (prob / maxProb) * 0.6;
+
+          barsHTML += `
+            <div class="cnn-prob-row ${isMax ? 'cnn-prob-max' : ''}">
+              <div class="cnn-prob-label">${labels[i] || i}</div>
+              <div class="cnn-prob-bar-bg">
+                <div class="cnn-prob-bar-fill" style="width: ${pct}%; background: ${barColor}; opacity: ${opacity}"></div>
+              </div>
+              <div class="cnn-prob-value">${pct}%</div>
+            </div>
+          `;
+        }
+        
+        // Show FC computation summary
+        let fcSummaryHTML = '<div class="cnn-fc-summary"><table class="cnn-conv-table"><thead><tr>';
+        fcSummaryHTML += '<th>الخلية</th><th>القيمة الخطية (Z)</th><th>Softmax (P)</th>';
+        fcSummaryHTML += '</tr></thead><tbody>';
+        for (let i = 0; i < z.length; i++) {
+          const isMax = i === prediction;
+          fcSummaryHTML += `<tr class="${isMax ? 'cnn-row-highlight' : ''}">
+            <td>Class ${labels[i] || i}</td>
+            <td class="cnn-mono">${z[i].toFixed(4)}</td>
+            <td class="cnn-mono" style="color: ${isMax ? 'var(--success)' : 'var(--text-muted)'}">${probabilities[i].toFixed(6)}</td>
+          </tr>`;
+        }
+        fcSummaryHTML += '</tbody></table></div>';
+        
+        html = `
+          <div class="cnn-fc-layout">
+            <div class="cnn-prob-chart">
+              <div class="cnn-prob-chart-title">توزيع الاحتمالات (Softmax Output)</div>
+              ${barsHTML}
+            </div>
+            ${fcSummaryHTML}
           </div>
-          <div class="cnn-prob-value">${pct}%</div>
-        </div>
-      `;
+        `;
+    } else {
+        // Just standard FC
+        let fcSummaryHTML = '<div class="cnn-fc-summary"><table class="cnn-conv-table"><thead><tr>';
+        fcSummaryHTML += '<th>Neuron</th><th>Linear (Z)</th><th>Activation</th>';
+        fcSummaryHTML += '</tr></thead><tbody>';
+        
+        const activatedZ = step.data.activatedZ;
+        const toShow = Math.min(z.length, 20); // max 20 neurons to show
+        for (let i = 0; i < toShow; i++) {
+          fcSummaryHTML += `<tr>
+            <td>Neuron ${i}</td>
+            <td class="cnn-mono">${z[i].toFixed(4)}</td>
+            <td class="cnn-mono" style="color: var(--success)">${activatedZ[i].toFixed(4)}</td>
+          </tr>`;
+        }
+        fcSummaryHTML += '</tbody></table></div>';
+        
+        html = `
+          <div class="cnn-fc-layout">
+             <p>Fully Connected Layer with ${config.neurons} neurons. Activation: ${config.activation}</p>
+             ${fcSummaryHTML}
+          </div>
+        `;
     }
 
-    // Show FC computation summary
-    let fcSummaryHTML = '<div class="cnn-fc-summary"><table class="cnn-conv-table"><thead><tr>';
-    fcSummaryHTML += '<th>الخلية</th><th>القيمة الخطية (Z)</th><th>Softmax (P)</th>';
-    fcSummaryHTML += '</tr></thead><tbody>';
-    for (let i = 0; i < z.length; i++) {
-      const isMax = i === predictedClass;
-      fcSummaryHTML += `<tr class="${isMax ? 'cnn-row-highlight' : ''}">
-        <td>Class ${labels[i]}</td>
-        <td class="cnn-mono">${z[i].toFixed(4)}</td>
-        <td class="cnn-mono" style="color: ${isMax ? 'var(--success)' : 'var(--text-muted)'}">${probabilities[i].toFixed(6)}</td>
-      </tr>`;
-    }
-    fcSummaryHTML += '</tbody></table></div>';
-
-    container.innerHTML = `
-      <div class="cnn-fc-layout">
-        <div class="cnn-prob-chart">
-          <div class="cnn-prob-chart-title">توزيع الاحتمالات (Softmax Output)</div>
-          ${barsHTML}
-        </div>
-        <div class="cnn-conv-formula">
-          <code>P(class_i) = e^(z_i) / Σ e^(z_k)</code>
-        </div>
-        ${fcSummaryHTML}
-      </div>
-    `;
+    container.innerHTML = html;
   }
 
   renderPredictionStep(container, step) {
@@ -563,25 +587,16 @@ class CNNVisualizer {
           ${miniBarsHTML}
         </div>
       </div>
-      <div class="cnn-info-box" style="border-color: var(--success); background: rgba(0,230,118,0.05);">
-        <i class="fas fa-check-circle" style="color: var(--success)"></i>
-        <span>الشبكة تتوقع أن الصورة المدخلة هي الرقم <b>${prediction}</b> بنسبة ثقة <b>${confidence}%</b>.</span>
-      </div>
-      <div class="cnn-info-box">
-        <i class="fas fa-exclamation-triangle" style="color: var(--warning)"></i>
-        <span>ملاحظة: الأوزان عشوائية (غير مدربة)، لذا التوقع لن يكون دقيقاً. الهدف هو فهم <b>آلية العمل</b> وليس دقة التصنيف.</span>
-      </div>
     `;
   }
 
   // ── Grid HTML Builder ──
-
   buildGridHTML(matrix, type = 'input') {
     if (!matrix || matrix.length === 0) return '<div class="cnn-grid-empty">لا توجد بيانات</div>';
 
     const rows = matrix.length;
     const cols = matrix[0].length;
-    const cellSize = rows <= 5 ? 'large' : (rows <= 8 ? 'medium' : 'small');
+    const cellSize = rows <= 5 ? 'large' : (rows <= 10 ? 'medium' : 'small');
 
     let html = `<div class="cnn-grid cnn-grid-${cellSize}" style="grid-template-columns: repeat(${cols}, 1fr);">`;
 
@@ -610,8 +625,12 @@ class CNNVisualizer {
           textColor = '#fff';
         }
 
-        const displayVal = type === 'input' ? val.toFixed(0) : val.toFixed(2);
-        html += `<div class="cnn-cell" style="background:${bgColor}; color:${textColor}" title="[${i},${j}] = ${val.toFixed(4)}">${displayVal}</div>`;
+        const displayVal = type === 'input' ? val.toFixed(1) : val.toFixed(2);
+        
+        // Dont render values if grid is very large
+        const content = rows > 14 ? '' : displayVal;
+        
+        html += `<div class="cnn-cell" style="background:${bgColor}; color:${textColor}" title="[${i},${j}] = ${val.toFixed(4)}">${content}</div>`;
       }
     }
 
@@ -620,7 +639,6 @@ class CNNVisualizer {
   }
 
   // ── Heatmap Color ──
-
   getHeatmapColor(val, minVal, maxVal) {
     const range = maxVal - minVal || 1;
     const norm = (val - minVal) / range; // 0..1
@@ -637,38 +655,47 @@ class CNNVisualizer {
   }
 
   // ── Render Full Pipeline Overview ──
-
   renderPipelineOverview(containerId) {
     const el = document.getElementById(containerId);
     if (!el || !this.pipelineData) return;
 
-    const d = this.cnnBuilder.network.dims;
-    const steps = [
-      { icon: 'fa-image', label: 'Input', dims: `${d.inputSize}×${d.inputSize}×1`, color: 'var(--success)' },
-      { icon: 'fa-asterisk', label: 'Conv2D', dims: `${d.convOutSize}×${d.convOutSize}×${this.cnnBuilder.config.numFilters}`, color: 'var(--primary-light)' },
-      { icon: 'fa-wave-square', label: 'ReLU', dims: `${d.convOutSize}×${d.convOutSize}×${this.cnnBuilder.config.numFilters}`, color: 'var(--warning)' },
-      { icon: 'fa-compress-arrows-alt', label: 'MaxPool', dims: `${d.poolOutSize}×${d.poolOutSize}×${this.cnnBuilder.config.numFilters}`, color: 'var(--accent)' },
-      { icon: 'fa-arrows-alt-h', label: 'Flatten', dims: `${d.flattenSize}`, color: '#E040FB' },
-      { icon: 'fa-project-diagram', label: 'FC+Softmax', dims: `${d.fcNeurons}`, color: 'var(--error)' },
-    ];
-
     let html = '<div class="cnn-pipeline-overview">';
-    steps.forEach((s, idx) => {
-      html += `
-        <div class="cnn-pipeline-node" data-step="${idx}" onclick="window._cnnVisualizer && window._cnnVisualizer.goToStep(${idx})">
-          <div class="cnn-pipeline-icon" style="color: ${s.color}; border-color: ${s.color}">
-            <i class="fas ${s.icon}"></i>
-          </div>
-          <div class="cnn-pipeline-label">${s.label}</div>
-          <div class="cnn-pipeline-dims">${s.dims}</div>
-        </div>
-      `;
-      if (idx < steps.length - 1) {
-        html += '<div class="cnn-pipeline-arrow"><i class="fas fa-chevron-left"></i></div>';
-      }
-    });
-    html += '</div>';
+    
+    // Add input node
+    html += `
+      <div class="cnn-pipeline-node">
+        <div class="cnn-pipeline-icon" style="color: var(--success); border-color: var(--success)"><i class="fas fa-image"></i></div>
+        <div class="cnn-pipeline-label">Input</div>
+        <div class="cnn-pipeline-dims">${this.cnnBuilder.config.inputSize}×${this.cnnBuilder.config.inputSize}</div>
+      </div>
+      <div class="cnn-pipeline-arrow"><i class="fas fa-chevron-left"></i></div>
+    `;
 
+    this.pipelineData.pipelineResults.forEach((pr, idx) => {
+        let icon, color, label, dims;
+        if (pr.type === 'conv2d') {
+            icon = 'fa-asterisk'; color = 'var(--primary-light)'; label = 'Conv2D'; dims = `${pr.meta.outShape.size}×${pr.meta.outShape.size}×${pr.meta.outShape.channels}`;
+        } else if (pr.type === 'pool2d') {
+            icon = 'fa-compress-arrows-alt'; color = 'var(--accent)'; label = 'Pool'; dims = `${pr.meta.outShape.size}×${pr.meta.outShape.size}×${pr.meta.outShape.channels}`;
+        } else if (pr.type === 'flatten') {
+            icon = 'fa-arrows-alt-h'; color = '#E040FB'; label = 'Flatten'; dims = `${pr.meta.outShape.length}`;
+        } else if (pr.type === 'fc') {
+            icon = 'fa-project-diagram'; color = 'var(--error)'; label = 'FC'; dims = `${pr.meta.outShape.length}`;
+        }
+
+        html += `
+          <div class="cnn-pipeline-node">
+            <div class="cnn-pipeline-icon" style="color: ${color}; border-color: ${color}"><i class="fas ${icon}"></i></div>
+            <div class="cnn-pipeline-label">${label}</div>
+            <div class="cnn-pipeline-dims">${dims}</div>
+          </div>
+        `;
+        if (idx < this.pipelineData.pipelineResults.length - 1) {
+          html += '<div class="cnn-pipeline-arrow"><i class="fas fa-chevron-left"></i></div>';
+        }
+    });
+
+    html += '</div>';
     el.innerHTML = html;
   }
 }
