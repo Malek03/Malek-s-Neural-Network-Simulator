@@ -1,4 +1,16 @@
+<div align="center">
+
 # محاكي الشبكات العصبية (Neural Network Simulator)
+
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Made with HTML | CSS | JS](https://img.shields.io/badge/Made%20with-HTML%20|%20CSS%20|%20JS-orange.svg)
+![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
+
+<br>
+
+[English](#) | [العربية](#)
+
+</div>
 
 ## نظرة عامة
 مشروع متكامل ومحاكي تفاعلي يهدف إلى تبسيط وشرح مفاهيم الشبكات العصبية والتعلم العميق (Deep Learning). يأخذ هذا المشروع المستخدم في رحلة تعليمية شاملة تبدأ من الإلهام البيولوجي وتاريخ الذكاء الاصطناعي، وصولاً إلى بناء وتدريب نماذج متقدمة مثل الشبكات العصبية العميقة (DNN) والشبكات العصبية الالتفافية (CNN).
