@@ -4238,3 +4238,122 @@ img {
 .cnn-draw-grid.cnn-grid-28 {
   grid-template-columns: repeat(28, 1fr) !important;
 }
+
+/* ============================================
+   RNN Simulator Styles
+   ============================================ */
+
+/* RNN Canvas Wrapper */
+.rnn-canvas-wrapper {
+  min-height: 380px;
+  position: relative;
+  background: rgba(0, 230, 118, 0.02);
+  border: 1px solid rgba(0, 230, 118, 0.08);
+  border-radius: var(--radius-md);
+  margin: 0.5rem;
+}
+
+.rnn-canvas-wrapper canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* RNN Config Panel */
+.rnn-config-panel {
+  overflow-y: auto;
+}
+
+.rnn-config-panel .config-slider::-webkit-slider-thumb {
+  background: var(--success);
+}
+
+.rnn-config-panel .config-slider:active::-webkit-slider-thumb {
+  box-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
+}
+
+/* RNN Formula Blocks */
+.rnn-math-section {
+  text-align: right;
+}
+
+.rnn-formula-block {
+  background: var(--bg-surface, #0d1117);
+  padding: 1rem 1.2rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+  border-right: 3px solid var(--success);
+}
+
+.rnn-formula-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.rnn-formula {
+  display: block;
+  background: var(--bg-darker, #060919);
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  margin: 0.5rem 0;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  direction: ltr;
+  text-align: left;
+}
+
+.rnn-formula-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+/* RNN specific overrides for training progress */
+#rnn-simulator-overlay .comp-progress-fill {
+  background: linear-gradient(135deg, #00E676, #00E5FF) !important;
+}
+
+#rnn-simulator-overlay .btn-primary {
+  background: linear-gradient(135deg, #00E676, #00BFA5);
+}
+
+#rnn-simulator-overlay .btn-primary:hover {
+  background: linear-gradient(135deg, #00C853, #00897B);
+  box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
+}
+
+#rnn-simulator-overlay .workspace-tab.active {
+  color: var(--success);
+  border-bottom-color: var(--success);
+}
+
+/* RNN time step animation */
+@keyframes rnnDataFlow {
+  0% { opacity: 0.3; transform: translateX(10px); }
+  50% { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0.3; transform: translateX(-10px); }
+}
+
+.rnn-flow-animation {
+  animation: rnnDataFlow 1.5s ease-in-out infinite;
+}
+
+/* RNN responsive */
+@media (max-width: 768px) {
+  .rnn-canvas-wrapper {
+    min-height: 250px;
+  }
+  
+  .rnn-formula-block {
+    padding: 0.7rem;
+  }
+  
+  .rnn-formula {
+    font-size: 0.75rem;
+  }
+}

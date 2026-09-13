@@ -62,7 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // 7. CNN Simulator Initialization
   initCNNSimulator();
 
-  // 8. Concept Cards Interactive Visualizations
+  // 8. RNN Simulator Initialization
+  initRNNSimulator();
+
+  // 9. Concept Cards Interactive Visualizations
   if (typeof ConceptCards !== 'undefined') {
     ConceptCards.init();
   }
@@ -1297,5 +1300,467 @@ function initCNNSimulator() {
 
   document.getElementById('cnn-play-btn').addEventListener('click', () => {
     cnnVisualizer.togglePlay();
+  });
+}
+
+/* ============================================
+   RNN SIMULATOR INITIALIZATION
+   ============================================ */
+function initRNNSimulator() {
+  const rnnCard = document.getElementById('rnn-card');
+  const rnnOverlay = document.getElementById('rnn-simulator-overlay');
+  const rnnCloseBtn = document.getElementById('rnn-close-sim');
+  const rnnBuildBtn = document.getElementById('rnn-btn-build');
+
+  if (!rnnCard || !rnnOverlay) return;
+
+  const rnnBuilder = new RNNBuilder();
+  let rnnTrainer = null;
+  let rnnStates = null; // Stores forward pass states for visualization
+  let animationStep = -1;
+  let animTimer = null;
+
+  // ── Open/Close RNN Simulator ──
+  rnnCard.addEventListener('click', () => {
+    rnnOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    updateRNNConfigUI();
+  });
+
+  rnnCloseBtn.addEventListener('click', () => {
+    rnnOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+    if (rnnTrainer && rnnTrainer.isTraining) {
+      rnnTrainer.stop();
+    }
+    if (animTimer) {
+      clearInterval(animTimer);
+      animTimer = null;
+    }
+  });
+
+  // ── Tab Switching ──
+  const tabs = rnnOverlay.querySelectorAll('.workspace-tab');
+  const archTab = document.getElementById('rnn-arch-tab');
+  const trainTab = document.getElementById('rnn-train-tab');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      if (tab.dataset.tab === 'rnn-arch') {
+        archTab.classList.add('active');
+        trainTab.classList.remove('active');
+      } else {
+        trainTab.classList.add('active');
+        archTab.classList.remove('active');
+
+        // Redraw chart since canvas may have been hidden
+        if (rnnTrainer && rnnTrainer.history && rnnTrainer.history.loss.length > 0) {
+          RNNTrainer.drawLossChart('rnn-loss-chart', rnnTrainer.history);
+        }
+      }
+    });
+  });
+
+  // ── Config Controls ──
+  const inputsSlider = document.getElementById('rnn-config-inputs');
+  const inputsVal = document.getElementById('rnn-val-inputs');
+  const hiddenSlider = document.getElementById('rnn-config-hidden');
+  const hiddenVal = document.getElementById('rnn-val-hidden');
+  const timestepsSlider = document.getElementById('rnn-config-timesteps');
+  const timestepsVal = document.getElementById('rnn-val-timesteps');
+  const cellTypeSelect = document.getElementById('rnn-cell-type');
+  const activationSelect = document.getElementById('rnn-activation');
+  const activationGroup = document.getElementById('rnn-activation-group');
+  const outputModeSelect = document.getElementById('rnn-output-mode');
+  const optimizerSelect = document.getElementById('rnn-optimizer');
+  const lrSlider = document.getElementById('rnn-config-lr');
+  const lrVal = document.getElementById('rnn-val-lr');
+  const epochsSlider = document.getElementById('rnn-config-epochs');
+  const epochsVal = document.getElementById('rnn-val-epochs');
+  const clipSlider = document.getElementById('rnn-config-clip');
+  const clipVal = document.getElementById('rnn-val-clip');
+
+  function autoRebuild() {
+    // Only auto-rebuild if not actively training
+    if (!rnnTrainer || !rnnTrainer.isTraining) {
+      rnnBuildBtn.click();
+    }
+  }
+
+  inputsSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    inputsVal.innerText = val;
+    rnnBuilder.setInputFeatures(val);
+    autoRebuild();
+  });
+
+  hiddenSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    hiddenVal.innerText = val;
+    rnnBuilder.setHiddenUnits(val);
+    autoRebuild();
+  });
+
+  const layersSlider = document.getElementById('rnn-config-layers');
+  const layersVal = document.getElementById('rnn-val-layers');
+  
+  if(layersSlider) {
+    layersSlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      if (val > 1) {
+        alert("تنبيه: لتسهيل الفهم البصري لآلية (Backpropagation Through Time) عبر الزمن، تم تقييد المحاكي بطبقة مخفية واحدة حالياً. إضافة طبقات متعددة (Deep RNN) سيتم دعمها في تحديثات قادمة.");
+        layersSlider.value = 1;
+        layersVal.innerText = 1;
+        rnnBuilder.setNumLayers(1);
+      } else {
+        layersVal.innerText = val;
+        rnnBuilder.setNumLayers(val);
+      }
+      autoRebuild();
+    });
+  }
+
+  timestepsSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    timestepsVal.innerText = val;
+    rnnBuilder.setTimeSteps(val);
+    autoRebuild();
+  });
+
+  cellTypeSelect.addEventListener('change', (e) => {
+    rnnBuilder.setCellType(e.target.value);
+    // Hide activation dropdown for LSTM/GRU (they use fixed gates)
+    if (e.target.value === 'lstm' || e.target.value === 'gru') {
+      activationGroup.style.display = 'none';
+    } else {
+      activationGroup.style.display = '';
+    }
+    autoRebuild();
+  });
+
+  activationSelect.addEventListener('change', (e) => {
+    rnnBuilder.setActivation(e.target.value);
+    autoRebuild();
+  });
+
+  outputModeSelect.addEventListener('change', (e) => {
+    rnnBuilder.setOutputMode(e.target.value);
+    autoRebuild();
+  });
+
+  optimizerSelect.addEventListener('change', (e) => {
+    rnnBuilder.setOptimizer(e.target.value);
+  });
+
+  lrSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value) / 1000;
+    lrVal.innerText = val.toFixed(3);
+    rnnBuilder.setLearningRate(val);
+  });
+
+  epochsSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    epochsVal.innerText = val;
+    rnnBuilder.setEpochs(val);
+  });
+
+  clipSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    clipVal.innerText = val;
+    rnnBuilder.setClipGradient(val);
+  });
+
+  function updateRNNConfigUI() {
+    inputsSlider.value = rnnBuilder.config.inputFeatures;
+    inputsVal.innerText = rnnBuilder.config.inputFeatures;
+    hiddenSlider.value = rnnBuilder.config.hiddenUnits;
+    hiddenVal.innerText = rnnBuilder.config.hiddenUnits;
+    if (layersSlider) {
+      layersSlider.value = rnnBuilder.config.numLayers;
+      layersVal.innerText = rnnBuilder.config.numLayers;
+    }
+    timestepsSlider.value = rnnBuilder.config.timeSteps;
+    timestepsVal.innerText = rnnBuilder.config.timeSteps;
+    cellTypeSelect.value = rnnBuilder.config.cellType;
+    activationSelect.value = rnnBuilder.config.activation;
+    outputModeSelect.value = rnnBuilder.config.outputMode;
+    optimizerSelect.value = rnnBuilder.config.optimizer;
+    lrSlider.value = rnnBuilder.config.learningRate * 1000;
+    lrVal.innerText = rnnBuilder.config.learningRate.toFixed(3);
+    epochsSlider.value = rnnBuilder.config.epochs;
+    epochsVal.innerText = rnnBuilder.config.epochs;
+    clipSlider.value = rnnBuilder.config.clipGradient;
+    clipVal.innerText = rnnBuilder.config.clipGradient;
+
+    // Show/hide activation group
+    if (rnnBuilder.config.cellType !== 'simple') {
+      activationGroup.style.display = 'none';
+    } else {
+      activationGroup.style.display = '';
+    }
+  }
+
+  // ── Build Network ──
+  rnnBuildBtn.addEventListener('click', () => {
+    const network = rnnBuilder.build();
+
+    // Run forward pass on first sample to get states for visualization
+    if (rnnBuilder.data && rnnBuilder.data.sequences.length > 0) {
+      rnnStates = rnnBuilder.forward(rnnBuilder.data.sequences[0]);
+    }
+
+    // Draw unfolded RNN
+    drawRNNArchitecture(-1);
+
+    // Update data table
+    const dataContainer = document.getElementById('rnn-data-table-container');
+    dataContainer.innerHTML = rnnBuilder.renderDataTable();
+
+    // Update weights tables
+    RNNTrainer.renderWeightsTable(network.initialWeights, 'rnn-initial-weights-table');
+    RNNTrainer.renderWeightsTable(network.weights, 'rnn-current-weights-table');
+
+    // Update status
+    document.getElementById('rnn-epoch-display').innerText = `0/${rnnBuilder.config.epochs}`;
+    document.getElementById('rnn-loss-display').innerText = '—';
+    document.getElementById('rnn-cell-display').innerText = rnnBuilder.config.cellType.toUpperCase();
+    document.getElementById('rnn-opt-display').innerText = rnnBuilder.config.optimizer.toUpperCase();
+    document.getElementById('rnn-train-progress').style.width = '0%';
+  });
+
+  function drawRNNArchitecture(highlight) {
+    RNNTrainer.drawUnfoldedRNN('rnn-network-canvas', rnnBuilder.config, rnnStates, highlight);
+  }
+
+  function startDataFlowAnimation() {
+    if (animTimer) clearInterval(animTimer);
+    animationStep = 0;
+
+    animTimer = setInterval(() => {
+      drawRNNArchitecture(animationStep);
+      animationStep = (animationStep + 1) % rnnBuilder.config.timeSteps;
+    }, 800);
+  }
+
+  // ── Training Controls ──
+  const trainBtn = document.getElementById('rnn-btn-train');
+  const stopBtn = document.getElementById('rnn-btn-stop');
+  const resetBtn = document.getElementById('rnn-btn-reset');
+
+  trainBtn.addEventListener('click', async () => {
+    if (!rnnBuilder.isBuilt) {
+      // Auto-build the network first (synchronous)
+      const network = rnnBuilder.build();
+      
+      if (rnnBuilder.data && rnnBuilder.data.sequences.length > 0) {
+        rnnStates = rnnBuilder.forward(rnnBuilder.data.sequences[0]);
+      }
+      drawRNNArchitecture(-1);
+      
+      const dataContainer = document.getElementById('rnn-data-table-container');
+      dataContainer.innerHTML = rnnBuilder.renderDataTable();
+      
+      RNNTrainer.renderWeightsTable(network.initialWeights, 'rnn-initial-weights-table');
+      RNNTrainer.renderWeightsTable(network.weights, 'rnn-current-weights-table');
+      
+      document.getElementById('rnn-cell-display').innerText = rnnBuilder.config.cellType.toUpperCase();
+      document.getElementById('rnn-opt-display').innerText = rnnBuilder.config.optimizer.toUpperCase();
+    }
+
+    if (animTimer) {
+      clearInterval(animTimer);
+      animTimer = null;
+    }
+
+    rnnTrainer = new RNNTrainer(rnnBuilder);
+
+    trainBtn.disabled = true;
+    stopBtn.disabled = false;
+    rnnBuildBtn.disabled = true;
+
+    document.getElementById('rnn-epoch-display').innerText = `0/${rnnBuilder.config.epochs}`;
+    document.getElementById('rnn-train-progress').style.width = '0%';
+
+    const passIndicator = document.getElementById('rnn-pass-indicator');
+    const passLabel = document.getElementById('rnn-pass-label');
+    const T = rnnBuilder.config.timeSteps;
+
+    // ── Animation callback: Forward Through Time + BPTT ──
+    rnnTrainer.onPassAnimation = async (states, sequence) => {
+      if (rnnTrainer.shouldStop) return;
+
+      rnnStates = states;
+
+      // ── Forward Through Time Animation ──
+      if (passIndicator && passLabel) {
+        passIndicator.style.display = 'flex';
+        passIndicator.className = 'dnn-pass-indicator forward';
+        passLabel.innerHTML = '<i class="fas fa-arrow-left"></i> إنتشار أمامي عبر الزمن (Forward Through Time)';
+      }
+
+      for (let t = 0; t < T; t++) {
+        if (rnnTrainer.shouldStop) break;
+        drawRNNArchitecture(t);
+        await new Promise(r => setTimeout(r, 250));
+      }
+
+      if (rnnTrainer.shouldStop) {
+        if (passIndicator) passIndicator.style.display = 'none';
+        return;
+      }
+
+      // ── BPTT Animation ──
+      if (passIndicator && passLabel) {
+        passIndicator.className = 'dnn-pass-indicator backward';
+        passLabel.innerHTML = '<i class="fas fa-arrow-right"></i> إنتشار خلفي عبر الزمن (BPTT)';
+      }
+
+      for (let t = T - 1; t >= 0; t--) {
+        if (rnnTrainer.shouldStop) break;
+        drawRNNArchitecture(t);
+        await new Promise(r => setTimeout(r, 250));
+      }
+
+      // Hide indicator after animation
+      if (passIndicator) {
+        passIndicator.style.display = 'none';
+      }
+
+      if (!rnnTrainer.shouldStop) {
+        // Show final state after animation
+        drawRNNArchitecture(-1);
+      }
+    };
+
+    await rnnTrainer.train(
+      // onEpoch callback
+      (epoch, loss) => {
+        document.getElementById('rnn-epoch-display').innerText = `${epoch}/${rnnBuilder.config.epochs}`;
+        document.getElementById('rnn-loss-display').innerText = loss.toFixed(6);
+        const progress = (epoch / rnnBuilder.config.epochs) * 100;
+        document.getElementById('rnn-train-progress').style.width = `${progress}%`;
+
+        // Update loss chart every few epochs
+        if (epoch % Math.max(1, Math.floor(rnnBuilder.config.epochs / 100)) === 0 || epoch === rnnBuilder.config.epochs) {
+          RNNTrainer.drawLossChart('rnn-loss-chart', rnnTrainer.history);
+        }
+
+        // Update weights table periodically
+        if (epoch % 10 === 0 || epoch === 1) {
+          RNNTrainer.renderWeightsTable(rnnBuilder.network.weights, 'rnn-current-weights-table');
+        }
+
+        // Redraw network with updated states every 5 epochs
+        if (epoch % 5 === 0 || epoch === 1) {
+          if (rnnBuilder.data && rnnBuilder.data.sequences.length > 0) {
+            rnnStates = rnnBuilder.forward(rnnBuilder.data.sequences[0]);
+            drawRNNArchitecture(-1);
+          }
+        }
+      },
+      // onComplete callback
+      (history) => {
+        trainBtn.disabled = false;
+        stopBtn.disabled = true;
+        rnnBuildBtn.disabled = false;
+
+        // Hide pass indicator
+        if (passIndicator) {
+          passIndicator.style.display = 'none';
+        }
+
+        // Final forward pass
+        if (rnnBuilder.data && rnnBuilder.data.sequences.length > 0) {
+          rnnStates = rnnBuilder.forward(rnnBuilder.data.sequences[0]);
+          drawRNNArchitecture(-1);
+        }
+
+        // Update weights table
+        RNNTrainer.renderWeightsTable(rnnBuilder.network.weights, 'rnn-current-weights-table');
+
+        // Draw loss chart
+        RNNTrainer.drawLossChart('rnn-loss-chart', history);
+
+        // Restart animation
+        startDataFlowAnimation();
+      }
+    );
+  });
+
+  stopBtn.addEventListener('click', () => {
+    if (rnnTrainer) {
+      rnnTrainer.stop();
+    }
+    trainBtn.disabled = false;
+    stopBtn.disabled = true;
+    rnnBuildBtn.disabled = false;
+
+    // Hide pass indicator immediately
+    const passIndicator = document.getElementById('rnn-pass-indicator');
+    if (passIndicator) {
+      passIndicator.style.display = 'none';
+    }
+
+    // Draw chart so far
+    if (rnnTrainer && rnnTrainer.history.loss.length > 0) {
+      RNNTrainer.drawLossChart('rnn-loss-chart', rnnTrainer.history);
+    }
+
+    startDataFlowAnimation();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    if (rnnTrainer && rnnTrainer.isTraining) {
+      rnnTrainer.stop();
+    }
+    if (animTimer) {
+      clearInterval(animTimer);
+      animTimer = null;
+    }
+
+    rnnBuilder.network = null;
+    rnnBuilder.data = null;
+    rnnBuilder.isBuilt = false;
+    rnnStates = null;
+    rnnTrainer = null;
+
+    // Clear canvas
+    const canvas = document.getElementById('rnn-network-canvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Reset UI
+    document.getElementById('rnn-data-table-container').innerHTML =
+      '<p style="padding: 2rem; text-align:center; color: var(--text-muted)">قم ببناء الشبكة لتوليد البيانات...</p>';
+    document.getElementById('rnn-epoch-display').innerText = '0/0';
+    document.getElementById('rnn-loss-display').innerText = '—';
+    document.getElementById('rnn-cell-display').innerText = '—';
+    document.getElementById('rnn-opt-display').innerText = '—';
+    document.getElementById('rnn-train-progress').style.width = '0%';
+
+    document.getElementById('rnn-initial-weights-table').innerHTML =
+      '<tbody><tr><td style="padding: 2rem; color: var(--text-muted);">قم ببناء الشبكة...</td></tr></tbody>';
+    document.getElementById('rnn-current-weights-table').innerHTML =
+      '<tbody><tr><td style="padding: 2rem; color: var(--text-muted);">قم ببناء الشبكة...</td></tr></tbody>';
+
+    trainBtn.disabled = false;
+    stopBtn.disabled = true;
+    rnnBuildBtn.disabled = false;
+  });
+
+  // ── Handle window resize for canvas ──
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      if (rnnBuilder.isBuilt && rnnOverlay.classList.contains('active')) {
+        drawRNNArchitecture(animationStep >= 0 ? animationStep : -1);
+      }
+    }, 200);
   });
 }

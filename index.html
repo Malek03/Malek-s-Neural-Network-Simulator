@@ -364,15 +364,15 @@
             </div>
             
             <!-- RNN -->
-            <div class="network-card locked">
+            <div class="network-card" id="rnn-card">
                 <div class="card-icon rnn">
                     <i class="fas fa-sync"></i>
                 </div>
                 <h3 class="card-title">الشبكة العصبية المتكررة</h3>
                 <div class="card-subtitle">Recurrent Neural Network (RNN)</div>
-                <p class="card-desc">تحتوي على ذاكرة داخلية للتعامل مع البيانات المتسلسلة مثل النصوص والصوت وتوقعات الأسهم.</p>
-                <div class="card-status coming-soon">
-                    <i class="fas fa-lock"></i> قريباً
+                <p class="card-desc">تحتوي على ذاكرة داخلية للتعامل مع البيانات المتسلسلة مثل النصوص والصوت وتوقعات الأسهم. قم ببنائها وتدريبها وشاهد تدفق البيانات عبر الزمن.</p>
+                <div class="card-status available">
+                    <i class="fas fa-check-circle"></i> متاح للمحاكاة
                 </div>
             </div>
             
@@ -1121,7 +1121,292 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
+    <!-- RNN SIMULATOR OVERLAY -->
+    <!-- ========================================== -->
+    <div class="simulator-overlay" id="rnn-simulator-overlay">
+        <div class="simulator-container">
+            <!-- Header -->
+            <div class="simulator-header">
+                <div class="simulator-title">
+                    <i class="fas fa-sync" style="color: var(--success)"></i> 
+                    محاكي الشبكة العصبية المتكررة (RNN)  Eng:Malek Almosanif
+                </div>
+                <button class="simulator-close" id="rnn-close-sim"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <!-- Body -->
+            <div class="simulator-body">
+                
+                <!-- Main Workspace -->
+                <div class="workspace">
+                    <div class="workspace-tabs">
+                        <button class="workspace-tab active" data-tab="rnn-arch">هيكلية الشبكة</button>
+                        <button class="workspace-tab" data-tab="rnn-train">التدريب والنتائج</button>
+                    </div>
+                    
+                    <div class="workspace-content">
+                        <!-- Architecture Tab -->
+                        <div class="dnn-tab-content active" id="rnn-arch-tab">
+                            <!-- Training Controls Bar (top) -->
+                            <div class="dnn-top-bar">
+                                <div class="dnn-top-controls">
+                                    <button class="btn btn-primary btn-sm" id="rnn-btn-train">
+                                        <i class="fas fa-play"></i> بدء التدريب
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" id="rnn-btn-stop" disabled>
+                                        <i class="fas fa-stop"></i> إيقاف
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="rnn-btn-reset">
+                                        <i class="fas fa-redo"></i> إعادة تهيئة
+                                    </button>
+                                </div>
+                                <div class="dnn-top-status" id="rnn-training-status">
+                                    <div class="dnn-mini-stat">
+                                        <span class="dnn-mini-label">Epoch</span>
+                                        <span class="dnn-mini-value" id="rnn-epoch-display">0/0</span>
+                                    </div>
+                                    <div class="dnn-mini-stat">
+                                        <span class="dnn-mini-label">Loss</span>
+                                        <span class="dnn-mini-value" id="rnn-loss-display">—</span>
+                                    </div>
+                                    <div class="dnn-mini-stat">
+                                        <span class="dnn-mini-label">Cell</span>
+                                        <span class="dnn-mini-value" id="rnn-cell-display">—</span>
+                                    </div>
+                                    <div class="dnn-mini-stat">
+                                        <span class="dnn-mini-label">Opt</span>
+                                        <span class="dnn-mini-value" id="rnn-opt-display">—</span>
+                                    </div>
+                                </div>
+                                <div class="dnn-top-progress">
+                                    <div class="comp-progress-bar" style="height: 4px;">
+                                        <div class="comp-progress-fill" id="rnn-train-progress" style="width: 0%; background: linear-gradient(135deg, #00E676, #00E5FF);"></div>
+                                    </div>
+                                </div>
+                                <!-- Forward Animation Indicator -->
+                                <div class="dnn-pass-indicator" id="rnn-pass-indicator" style="display:none;">
+                                    <span id="rnn-pass-label"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="network-canvas-wrapper rnn-canvas-wrapper">
+                                <canvas id="rnn-network-canvas"></canvas>
+                            </div>
+                            
+                            <!-- Data Table -->
+                            <div class="data-table-section" id="rnn-data-table-section">
+                                <div class="data-table-header">
+                                    <div class="data-table-title">
+                                        <i class="fas fa-table" style="color: var(--success)"></i> بيانات التدريب التسلسلية
+                                    </div>
+                                </div>
+                                <div class="data-table-wrapper" id="rnn-data-table-container">
+                                    <p style="padding: 2rem; text-align:center; color: var(--text-muted)">قم ببناء الشبكة لتوليد البيانات...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Training Tab (Loss Chart + Weights) -->
+                        <div class="dnn-tab-content" id="rnn-train-tab">
+                            <!-- Loss Chart -->
+                            <div class="dnn-chart-container" style="flex:none; height:350px;">
+                                <canvas id="rnn-loss-chart"></canvas>
+                            </div>
+                            
+                            <!-- Weights Viewer -->
+                            <div class="dnn-weights-section" style="padding: 1.5rem;">
+                                <div class="data-table-header" style="justify-content: space-between; display: flex; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                                    <div class="data-table-title">
+                                        <i class="fas fa-balance-scale" style="color: var(--success)"></i> مقارنة الأوزان (Weights)
+                                    </div>
+                                </div>
+                                
+                                <div class="dnn-weights-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <!-- Initial Weights Table -->
+                                    <div class="weights-panel">
+                                        <div style="text-align: center; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.5rem; font-weight: bold;">
+                                            الأوزان الابتدائية (Initial)
+                                        </div>
+                                        <div class="data-table-wrapper">
+                                            <table class="data-table" id="rnn-initial-weights-table">
+                                                <tbody>
+                                                    <tr><td style="padding: 2rem; color: var(--text-muted);">قم ببناء الشبكة...</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Current Weights Table -->
+                                    <div class="weights-panel">
+                                        <div style="text-align: center; color: var(--success); font-family: var(--font-mono); margin-bottom: 0.5rem; font-weight: bold;">
+                                            الأوزان الحالية (Current)
+                                        </div>
+                                        <div class="data-table-wrapper">
+                                            <table class="data-table" id="rnn-current-weights-table">
+                                                <tbody>
+                                                    <tr><td style="padding: 2rem; color: var(--text-muted);">قم ببناء الشبكة...</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Math Explanation -->
+                            <div style="padding: 1.5rem; border-top: 1px solid var(--glass-border);">
+                                <div class="rnn-math-section">
+                                    <h4 style="color: var(--success); margin-bottom: 1rem; font-size: 1rem;">
+                                        <i class="fas fa-graduation-cap"></i> المعادلات الأساسية للـ RNN
+                                    </h4>
+                                    
+                                    <div class="rnn-formula-block">
+                                        <div class="rnn-formula-title">1. حساب الحالة المخفية (Hidden State)</div>
+                                        <code class="rnn-formula">h_t = tanh(W_xh · x_t + W_hh · h_{t-1} + b_h)</code>
+                                        <p class="rnn-formula-desc">الحالة المخفية الجديدة تعتمد على المدخل الحالي <b>والحالة السابقة</b> — هذا هو سر "الذاكرة"</p>
+                                    </div>
+                                    
+                                    <div class="rnn-formula-block">
+                                        <div class="rnn-formula-title">2. حساب المخرج (Output)</div>
+                                        <code class="rnn-formula" style="color: var(--success)">y_t = W_hy · h_t + b_y</code>
+                                        <p class="rnn-formula-desc">المخرج في كل خطوة زمنية يعتمد على الحالة المخفية الحالية</p>
+                                    </div>
+                                    
+                                    <div class="rnn-formula-block">
+                                        <div class="rnn-formula-title">3. الانتشار الخلفي عبر الزمن (BPTT)</div>
+                                        <code class="rnn-formula" style="color: var(--warning)">∂L/∂W = Σ_t (∂L/∂y_t · ∂y_t/∂h_t · ∂h_t/∂W)</code>
+                                        <p class="rnn-formula-desc">المشتقات تتراكم عبر جميع الخطوات الزمنية — مما قد يسبب تلاشي أو انفجار الانحدار</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Config Panel (Right Sidebar) -->
+                <div class="config-panel rnn-config-panel">
+                    <div style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-sliders-h" style="color: var(--success)"></i> إعدادات الشبكة المتكررة
+                    </div>
+                    
+                    <!-- Input Features -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            عدد المدخلات (Input Features)
+                            <span class="config-value" id="rnn-val-inputs">1</span>
+                        </div>
+                        <input type="range" class="config-slider" id="rnn-config-inputs" min="1" max="12" value="1">
+                    </div>
+                    
+                    <!-- Hidden Units -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            عدد الخلايا المخفية (Hidden Units)
+                            <span class="config-value" id="rnn-val-hidden">4</span>
+                        </div>
+                        <input type="range" class="config-slider" id="rnn-config-hidden" min="1" max="20" value="4">
+                    </div>
+
+                    <!-- Hidden Layers -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            عدد الطبقات المخفية (Hidden Layers)
+                            <span class="config-value" id="rnn-val-layers">1</span>
+                        </div>
+                        <input type="range" class="config-slider" id="rnn-config-layers" min="1" max="3" value="1">
+                    </div>
+                    
+                    <!-- Time Steps -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            عدد الخطوات الزمنية (Time Steps)
+                            <span class="config-value" id="rnn-val-timesteps">4</span>
+                        </div>
+                        <input type="range" class="config-slider" id="rnn-config-timesteps" min="2" max="10" value="4">
+                    </div>
+                    
+                    <div class="config-divider"></div>
+                    
+                    <!-- Cell Type -->
+                    <div class="config-group">
+                        <div class="config-label">نوع الخلية (Cell Type)</div>
+                        <select class="dnn-select" id="rnn-cell-type">
+                            <option value="simple">Simple RNN</option>
+                            <option value="lstm">LSTM</option>
+                            <option value="gru">GRU</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Activation -->
+                    <div class="config-group" id="rnn-activation-group">
+                        <div class="config-label">دالة التنشيط (Activation)</div>
+                        <select class="dnn-select" id="rnn-activation">
+                            <option value="tanh">Tanh</option>
+                            <option value="relu">ReLU</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Output Mode -->
+                    <div class="config-group">
+                        <div class="config-label">نمط المخرج (Output Mode)</div>
+                        <select class="dnn-select" id="rnn-output-mode">
+                            <option value="many-to-one">Many-to-One (كثير→واحد)</option>
+                            <option value="many-to-many">Many-to-Many (كثير→كثير)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="config-divider"></div>
+                    
+                    <!-- Optimizer -->
+                    <div class="config-group">
+                        <div class="config-label">المحسّن (Optimizer)</div>
+                        <select class="dnn-select" id="rnn-optimizer">
+                            <option value="adam">Adam</option>
+                            <option value="sgd">SGD</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Learning Rate -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            معدل التعلم (Learning Rate)
+                            <span class="config-value" id="rnn-val-lr">0.01</span>
+                        </div>
+                        <input type="range" class="config-slider" id="rnn-config-lr" min="1" max="100" value="10" step="1">
+                    </div>
+                    
+                    <!-- Epochs -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            عدد الحقب (Epochs)
+                            <span class="config-value" id="rnn-val-epochs">100</span>
+                        </div>
+                        <input type="range" class="config-slider" id="rnn-config-epochs" min="1" max="500" value="100">
+                    </div>
+                    
+                    <!-- Gradient Clipping -->
+                    <div class="config-group">
+                        <div class="config-label">
+                            <span><i class="fas fa-cut" style="color: var(--warning); margin-left: 0.3rem;"></i> قص الانحدار (Gradient Clip)</span>
+                            <span class="config-value" id="rnn-val-clip">5</span>
+                        </div>
+                        <input type="range" class="config-slider" id="rnn-config-clip" min="1" max="50" value="5" step="1">
+                        <div class="config-hint" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                            يمنع انفجار الانحدار (Exploding Gradients) في الـ RNN
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="rnn-btn-build" style="width: 100%; justify-content: center; margin-top: auto;">
+                        <i class="fas fa-hammer"></i> بناء الشبكة
+                    </button>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
+
     <script src="js/math-utils.js"></script>
     <script src="js/data-generator.js"></script>
     <script src="js/hero-animation.js"></script>
@@ -1134,6 +1419,8 @@
     <script src="js/cnn-builder.js"></script>
     <script src="js/cnn-visualizer.js"></script>
     <script src="js/cnn-architectures.js"></script>
+    <script src="js/rnn-builder.js"></script>
+    <script src="js/rnn-training.js"></script>
     <script src="js/concepts-interactive.js"></script>
     <script src="js/main.js"></script>
 </body>
