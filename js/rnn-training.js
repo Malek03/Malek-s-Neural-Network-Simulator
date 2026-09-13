@@ -580,47 +580,67 @@ class RNNTrainer {
           RNNTrainer._drawArrow(ctx, centerX, lY + cellH / 2 + 5, 'up', `rgba(0, 229, 255, ${alpha * 0.4})`);
         }
 
-        // Cell background
-        ctx.beginPath();
         const rx = centerX - cellW / 2;
         const ry = lY - cellH / 2;
-        ctx.moveTo(rx + cornerR, ry);
-        ctx.lineTo(rx + cellW - cornerR, ry);
-        ctx.quadraticCurveTo(rx + cellW, ry, rx + cellW, ry + cornerR);
-        ctx.lineTo(rx + cellW, ry + cellH - cornerR);
-        ctx.quadraticCurveTo(rx + cellW, ry + cellH, rx + cellW - cornerR, ry + cellH);
-        ctx.lineTo(rx + cornerR, ry + cellH);
-        ctx.quadraticCurveTo(rx, ry + cellH, rx, ry + cellH - cornerR);
-        ctx.lineTo(rx, ry + cornerR);
-        ctx.quadraticCurveTo(rx, ry, rx + cornerR, ry);
-        ctx.closePath();
-
-        const cellColor = isHighlighted ? 'rgba(108, 99, 255, 0.25)' : 'rgba(108, 99, 255, 0.1)';
-        ctx.fillStyle = cellColor;
-        ctx.fill();
-        ctx.strokeStyle = `rgba(108, 99, 255, ${alpha})`;
-        ctx.lineWidth = isHighlighted ? 2 : 1.5;
-        ctx.stroke();
-
-        // Draw internal nodes (up to 3)
-        const displayNodes = Math.min(hiddenUnits, 3);
-        const nodeSpacing = (cellW - 10) / Math.max(1, displayNodes - 1);
-        const startNx = displayNodes === 1 ? centerX : centerX - (cellW - 15) / 2;
         
-        for (let n = 0; n < displayNodes; n++) {
-          const nx = displayNodes === 1 ? startNx : startNx + n * nodeSpacing;
+        const displayNodes = Math.min(hiddenUnits, 3);
+        const offset = 6;
+        const cellColor = isHighlighted ? 'rgba(108, 99, 255, 0.25)' : 'rgba(108, 99, 255, 0.1)';
+        const borderColor = `rgba(108, 99, 255, ${alpha})`;
+        const lineWidth = isHighlighted ? 2 : 1.5;
+
+        // Draw from back to front
+        for (let n = displayNodes - 1; n >= 0; n--) {
+          const bx = rx + n * offset;
+          const by = ry - n * offset;
+          
+          // Draw dashed lines connecting back box to front box for depth
+          if (n === displayNodes - 1 && n > 0) {
+            ctx.beginPath();
+            // Top-left
+            ctx.moveTo(bx + cornerR, by);
+            ctx.lineTo(rx + cornerR, ry);
+            // Top-right
+            ctx.moveTo(bx + cellW - cornerR, by);
+            ctx.lineTo(rx + cellW - cornerR, ry);
+            // Bottom-right
+            ctx.moveTo(bx + cellW, by + cellH - cornerR);
+            ctx.lineTo(rx + cellW, ry + cellH - cornerR);
+            // Bottom-left
+            ctx.moveTo(bx, by + cellH - cornerR);
+            ctx.lineTo(rx, ry + cellH - cornerR);
+            
+            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.3})`;
+            ctx.setLineDash([3, 3]);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+
+          // Cell background
           ctx.beginPath();
-          ctx.arc(nx, lY + 3, innerNodeR, 0, Math.PI * 2);
-          ctx.fillStyle = isHighlighted ? 'rgba(108, 99, 255, 0.6)' : 'rgba(108, 99, 255, 0.3)';
+          ctx.moveTo(bx + cornerR, by);
+          ctx.lineTo(bx + cellW - cornerR, by);
+          ctx.quadraticCurveTo(bx + cellW, by, bx + cellW, by + cornerR);
+          ctx.lineTo(bx + cellW, by + cellH - cornerR);
+          ctx.quadraticCurveTo(bx + cellW, by + cellH, bx + cellW - cornerR, by + cellH);
+          ctx.lineTo(bx + cornerR, by + cellH);
+          ctx.quadraticCurveTo(bx, by + cellH, bx, by + cellH - cornerR);
+          ctx.lineTo(bx, by + cornerR);
+          ctx.quadraticCurveTo(bx, by, bx + cornerR, by);
+          ctx.closePath();
+
+          ctx.fillStyle = cellColor;
           ctx.fill();
-          ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = borderColor;
+          ctx.lineWidth = lineWidth;
           ctx.stroke();
         }
+
         if (hiddenUnits > 3) {
            ctx.fillStyle = `rgba(255,255,255,${alpha})`;
            ctx.font = '8px Arial';
-           ctx.fillText('...', centerX, lY + cellH/2 - 2);
+           ctx.fillText('...', centerX + displayNodes * offset, lY + cellH/2 - displayNodes * offset);
         }
 
         // Cell type label
