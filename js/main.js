@@ -1410,15 +1410,8 @@ function initRNNSimulator() {
   if(layersSlider) {
     layersSlider.addEventListener('input', (e) => {
       const val = parseInt(e.target.value);
-      if (val > 1) {
-        alert("تنبيه: لتسهيل الفهم البصري لآلية (Backpropagation Through Time) عبر الزمن، تم تقييد المحاكي بطبقة مخفية واحدة حالياً. إضافة طبقات متعددة (Deep RNN) سيتم دعمها في تحديثات قادمة.");
-        layersSlider.value = 1;
-        layersVal.innerText = 1;
-        rnnBuilder.setNumLayers(1);
-      } else {
-        layersVal.innerText = val;
-        rnnBuilder.setNumLayers(val);
-      }
+      layersVal.innerText = val;
+      rnnBuilder.setNumLayers(val);
       autoRebuild();
     });
   }
@@ -1684,8 +1677,10 @@ function initRNNSimulator() {
         // Draw loss chart
         RNNTrainer.drawLossChart('rnn-loss-chart', history);
 
-        // Restart animation
-        startDataFlowAnimation();
+        // Restart animation only if training completed naturally
+        if (!rnnTrainer.shouldStop) {
+          startDataFlowAnimation();
+        }
       }
     );
   });
@@ -1704,12 +1699,19 @@ function initRNNSimulator() {
       passIndicator.style.display = 'none';
     }
 
+    // Stop the idle animation if it was running
+    if (animTimer) {
+      clearInterval(animTimer);
+      animTimer = null;
+    }
+
+    // Draw static architecture
+    drawRNNArchitecture(-1);
+
     // Draw chart so far
     if (rnnTrainer && rnnTrainer.history.loss.length > 0) {
       RNNTrainer.drawLossChart('rnn-loss-chart', rnnTrainer.history);
     }
-
-    startDataFlowAnimation();
   });
 
   resetBtn.addEventListener('click', () => {

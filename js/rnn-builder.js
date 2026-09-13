@@ -263,6 +263,45 @@ class RNNBuilder {
       weights.b_n = RNNBuilder._createVector(hiddenUnits);
     }
 
+    // Layer 2 weights (if numLayers === 2)
+    if (this.config.numLayers === 2) {
+      weights.W_xh2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+      weights.W_hh2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+      weights.b_h2 = RNNBuilder._createVector(hiddenUnits);
+
+      if (this.config.cellType === 'lstm') {
+        weights.W_f_x2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.W_f_h2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.b_f2 = new Array(hiddenUnits).fill(1);
+        
+        weights.W_i_x2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.W_i_h2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.b_i2 = RNNBuilder._createVector(hiddenUnits);
+        
+        weights.W_c_x2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.W_c_h2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.b_c2 = RNNBuilder._createVector(hiddenUnits);
+        
+        weights.W_o_x2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.W_o_h2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.b_o2 = RNNBuilder._createVector(hiddenUnits);
+      }
+
+      if (this.config.cellType === 'gru') {
+        weights.W_r_x2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.W_r_h2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.b_r2 = RNNBuilder._createVector(hiddenUnits);
+        
+        weights.W_z_x2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.W_z_h2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.b_z2 = RNNBuilder._createVector(hiddenUnits);
+        
+        weights.W_n_x2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.W_n_h2 = RNNBuilder._createMatrix(hiddenUnits, hiddenUnits);
+        weights.b_n2 = RNNBuilder._createVector(hiddenUnits);
+      }
+    }
+
     this.network = {
       weights: weights,
       initialWeights: RNNBuilder._deepCopy(weights),
@@ -324,21 +363,32 @@ class RNNBuilder {
     const states = {
       inputs: [],      // x_t for each time step
       hiddens: [],     // h_t for each time step (after activation)
+      hiddens2: [],    // h²_t for layer 2
       rawHiddens: [],  // z_t (pre-activation) for each step
+      rawHiddens2: [], // z²_t for layer 2
       outputs: [],     // y_t for each time step
       cells: [],       // c_t for LSTM
+      cells2: [],      // c²_t for LSTM layer 2
       gates: [],       // gate values for LSTM/GRU
+      gates2: [],      // gate values for layer 2
     };
 
     let h_prev = RNNBuilder._createVector(hiddenUnits, 0);
-    let c_prev = RNNBuilder._createVector(hiddenUnits, 0); // For LSTM
+    let c_prev = RNNBuilder._createVector(hiddenUnits, 0); // For LSTM layer 1
+    
+    let h_prev2 = RNNBuilder._createVector(hiddenUnits, 0);
+    let c_prev2 = RNNBuilder._createVector(hiddenUnits, 0); // For LSTM layer 2
 
     states.hiddens.push([...h_prev]); // h_0
+    if (this.config.numLayers === 2) {
+      states.hiddens2.push([...h_prev2]);
+    }
 
     for (let t = 0; t < T; t++) {
       const x_t = sequence[t];
       states.inputs.push([...x_t]);
 
+      // --- Layer 1 ---
       if (this.config.cellType === 'lstm') {
         const result = this._lstmStep(x_t, h_prev, c_prev, w);
         states.hiddens.push([...result.h]);
@@ -355,21 +405,61 @@ class RNNBuilder {
         h_prev = result.h;
       } else {
         // Simple RNN
-        // z_t = W_xh * x_t + W_hh * h_{t-1} + b_h
         const wx = RNNBuilder._matVecMul(w.W_xh, x_t);
         const wh = RNNBuilder._matVecMul(w.W_hh, h_prev);
         const z_t = RNNBuilder._vecAdd(RNNBuilder._vecAdd(wx, wh), w.b_h);
         states.rawHiddens.push([...z_t]);
-
-        // h_t = activation(z_t)
         const h_t = z_t.map(v => this.activate(v));
         states.hiddens.push([...h_t]);
         h_prev = h_t;
       }
 
-      // Output: y_t = W_hy * h_t + b_y
+      let final_h = h_prev;
+
+      // --- Layer 2 ---
+      if (this.config.numLayers === 2) {
+        const x_t2 = h_prev; // Layer 1 output is layer 2 input
+        
+        if (this.config.cellType === 'lstm') {
+          const w2 = {
+            W_f_x: w.W_f_x2, W_f_h: w.W_f_h2, b_f: w.b_f2,
+            W_i_x: w.W_i_x2, W_i_h: w.W_i_h2, b_i: w.b_i2,
+            W_c_x: w.W_c_x2, W_c_h: w.W_c_h2, b_c: w.b_c2,
+            W_o_x: w.W_o_x2, W_o_h: w.W_o_h2, b_o: w.b_o2
+          };
+          const result2 = this._lstmStep(x_t2, h_prev2, c_prev2, w2);
+          states.hiddens2.push([...result2.h]);
+          states.cells2.push([...result2.c]);
+          states.gates2.push(result2.gates);
+          states.rawHiddens2.push(result2.rawHidden);
+          h_prev2 = result2.h;
+          c_prev2 = result2.c;
+        } else if (this.config.cellType === 'gru') {
+          const w2 = {
+            W_r_x: w.W_r_x2, W_r_h: w.W_r_h2, b_r: w.b_r2,
+            W_z_x: w.W_z_x2, W_z_h: w.W_z_h2, b_z: w.b_z2,
+            W_n_x: w.W_n_x2, W_n_h: w.W_n_h2, b_n: w.b_n2
+          };
+          const result2 = this._gruStep(x_t2, h_prev2, w2);
+          states.hiddens2.push([...result2.h]);
+          states.gates2.push(result2.gates);
+          states.rawHiddens2.push(result2.rawHidden);
+          h_prev2 = result2.h;
+        } else {
+          const wx = RNNBuilder._matVecMul(w.W_xh2, x_t2);
+          const wh = RNNBuilder._matVecMul(w.W_hh2, h_prev2);
+          const z_t2 = RNNBuilder._vecAdd(RNNBuilder._vecAdd(wx, wh), w.b_h2);
+          states.rawHiddens2.push([...z_t2]);
+          const h_t2 = z_t2.map(v => this.activate(v));
+          states.hiddens2.push([...h_t2]);
+          h_prev2 = h_t2;
+        }
+        final_h = h_prev2;
+      }
+
+      // Output: y_t = W_hy * final_h + b_y
       const y_t = RNNBuilder._vecAdd(
-        RNNBuilder._matVecMul(w.W_hy, h_prev),
+        RNNBuilder._matVecMul(w.W_hy, final_h),
         w.b_y
       );
       states.outputs.push([...y_t]);

@@ -123,7 +123,7 @@ class RNNTrainer {
     const w = this.builder.network.weights;
     const T = sequence.length;
     const H = this.builder.config.hiddenUnits;
-    const { outputMode, clipGradient } = this.builder.config;
+    const { outputMode, clipGradient, numLayers } = this.builder.config;
 
     // Initialize gradient accumulators
     const grads = {
@@ -133,6 +133,12 @@ class RNNTrainer {
       W_hy: RNNBuilder._createMatrix(this.builder.config.outputSize, H).map(r => r.map(() => 0)),
       b_y: RNNBuilder._createVector(this.builder.config.outputSize, 0),
     };
+
+    if (numLayers === 2) {
+      grads.W_xh2 = RNNBuilder._createMatrix(H, H).map(r => r.map(() => 0));
+      grads.W_hh2 = RNNBuilder._createMatrix(H, H).map(r => r.map(() => 0));
+      grads.b_h2 = RNNBuilder._createVector(H, 0);
+    }
 
     // Output error at each time step
     const dOutputs = [];
@@ -152,32 +158,75 @@ class RNNTrainer {
 
     // BPTT: go backwards through time
     let dh_next = RNNBuilder._createVector(H, 0);
+    let dh_next2 = RNNBuilder._createVector(H, 0);
 
     for (let t = T - 1; t >= 0; t--) {
       const dy = dOutputs[t];
-      const h_t = states.hiddens[t + 1]; // h_t (index shifted by 1 because h[0] is h_init)
-      const h_prev = states.hiddens[t];
       const x_t = states.inputs[t];
 
-      // Gradients for output layer
-      grads.W_hy = RNNBuilder._matAdd(grads.W_hy, RNNBuilder._outerProduct(dy, h_t));
-      grads.b_y = RNNBuilder._vecAdd(grads.b_y, dy);
+      if (numLayers === 2) {
+        const h_t2 = states.hiddens2[t + 1];
+        const h_prev2 = states.hiddens2[t];
+        const h_t1 = states.hiddens[t + 1]; // This is x_t2 for layer 2
+        const h_prev1 = states.hiddens[t];
 
-      // dh from output + from next time step
-      const dh_from_output = RNNBuilder._matVecMul(RNNBuilder._transpose(w.W_hy), dy);
-      const dh = RNNBuilder._vecAdd(dh_from_output, dh_next);
+        // --- Layer 2 ---
+        // Gradients for output layer
+        grads.W_hy = RNNBuilder._matAdd(grads.W_hy, RNNBuilder._outerProduct(dy, h_t2));
+        grads.b_y = RNNBuilder._vecAdd(grads.b_y, dy);
 
-      // For simple RNN: dz = dh * activation'(z)
-      const z_t = states.rawHiddens[t];
-      const dz = dh.map((v, i) => v * this.builder.activateDeriv(h_t[i]));
+        const dh_from_output = RNNBuilder._matVecMul(RNNBuilder._transpose(w.W_hy), dy);
+        const dh2 = RNNBuilder._vecAdd(dh_from_output, dh_next2);
 
-      // Gradients for hidden layer
-      grads.W_xh = RNNBuilder._matAdd(grads.W_xh, RNNBuilder._outerProduct(dz, x_t));
-      grads.W_hh = RNNBuilder._matAdd(grads.W_hh, RNNBuilder._outerProduct(dz, h_prev));
-      grads.b_h = RNNBuilder._vecAdd(grads.b_h, dz);
+        // dz2 = dh2 * activation'(z2)
+        const dz2 = dh2.map((v, i) => v * this.builder.activateDeriv(h_t2[i]));
 
-      // Propagate gradient to previous time step
-      dh_next = RNNBuilder._matVecMul(RNNBuilder._transpose(w.W_hh), dz);
+        // Gradients for layer 2
+        grads.W_xh2 = RNNBuilder._matAdd(grads.W_xh2, RNNBuilder._outerProduct(dz2, h_t1));
+        grads.W_hh2 = RNNBuilder._matAdd(grads.W_hh2, RNNBuilder._outerProduct(dz2, h_prev2));
+        grads.b_h2 = RNNBuilder._vecAdd(grads.b_h2, dz2);
+
+        dh_next2 = RNNBuilder._matVecMul(RNNBuilder._transpose(w.W_hh2), dz2);
+
+        // --- Layer 1 ---
+        // Gradient from layer 2 + next time step
+        const dh_from_layer2 = RNNBuilder._matVecMul(RNNBuilder._transpose(w.W_xh2), dz2);
+        const dh1 = RNNBuilder._vecAdd(dh_from_layer2, dh_next);
+
+        // dz1 = dh1 * activation'(z1)
+        const dz1 = dh1.map((v, i) => v * this.builder.activateDeriv(h_t1[i]));
+
+        // Gradients for layer 1
+        grads.W_xh = RNNBuilder._matAdd(grads.W_xh, RNNBuilder._outerProduct(dz1, x_t));
+        grads.W_hh = RNNBuilder._matAdd(grads.W_hh, RNNBuilder._outerProduct(dz1, h_prev1));
+        grads.b_h = RNNBuilder._vecAdd(grads.b_h, dz1);
+
+        dh_next = RNNBuilder._matVecMul(RNNBuilder._transpose(w.W_hh), dz1);
+
+      } else {
+        // --- Single Layer ---
+        const h_t = states.hiddens[t + 1];
+        const h_prev = states.hiddens[t];
+
+        // Gradients for output layer
+        grads.W_hy = RNNBuilder._matAdd(grads.W_hy, RNNBuilder._outerProduct(dy, h_t));
+        grads.b_y = RNNBuilder._vecAdd(grads.b_y, dy);
+
+        // dh from output + from next time step
+        const dh_from_output = RNNBuilder._matVecMul(RNNBuilder._transpose(w.W_hy), dy);
+        const dh = RNNBuilder._vecAdd(dh_from_output, dh_next);
+
+        // dz = dh * activation'(z)
+        const dz = dh.map((v, i) => v * this.builder.activateDeriv(h_t[i]));
+
+        // Gradients for hidden layer
+        grads.W_xh = RNNBuilder._matAdd(grads.W_xh, RNNBuilder._outerProduct(dz, x_t));
+        grads.W_hh = RNNBuilder._matAdd(grads.W_hh, RNNBuilder._outerProduct(dz, h_prev));
+        grads.b_h = RNNBuilder._vecAdd(grads.b_h, dz);
+
+        // Propagate gradient to previous time step
+        dh_next = RNNBuilder._matVecMul(RNNBuilder._transpose(w.W_hh), dz);
+      }
     }
 
     // Gradient clipping
@@ -236,7 +285,13 @@ class RNNTrainer {
 
   _sgdUpdate(grads, lr) {
     const w = this.builder.network.weights;
-    for (const key of ['W_xh', 'W_hh', 'b_h', 'W_hy', 'b_y']) {
+    const updateKeys = ['W_xh', 'W_hh', 'b_h', 'W_hy', 'b_y'];
+    
+    if (this.builder.config.numLayers === 2) {
+      updateKeys.push('W_xh2', 'W_hh2', 'b_h2');
+    }
+
+    for (const key of updateKeys) {
       if (!grads[key]) continue;
       if (Array.isArray(w[key][0])) {
         for (let i = 0; i < w[key].length; i++) {
@@ -434,7 +489,7 @@ class RNNTrainer {
     ctx.fillStyle = 'transparent';
     ctx.fillRect(0, 0, W, H);
 
-    const { timeSteps, hiddenUnits, inputFeatures, cellType } = config;
+    const { timeSteps, hiddenUnits, inputFeatures, cellType, numLayers = 1 } = config;
     const T = timeSteps;
 
     // Layout calculations
@@ -444,10 +499,18 @@ class RNNTrainer {
 
     const stepWidth = usableW / T;
     const inputY = H - pad.bottom;
-    const hiddenY = pad.top + usableH * 0.5;
     const outputY = pad.top;
 
+    const layerYs = [];
+    if (numLayers === 1) {
+      layerYs.push(pad.top + usableH * 0.5);
+    } else {
+      layerYs.push(pad.top + usableH * 0.66); // Layer 1
+      layerYs.push(pad.top + usableH * 0.33); // Layer 2
+    }
+
     const nodeRadius = Math.min(22, stepWidth * 0.15);
+    const innerNodeR = Math.min(8, nodeRadius * 0.5);
 
     // ── Draw each time step ──
     for (let t = 0; t < T; t++) {
@@ -483,69 +546,148 @@ class RNNTrainer {
         ctx.fillText(val.length > 8 ? val.substring(0, 8) + '..' : val, centerX, inputY - 3);
       }
 
-      // ── Connection: Input → Hidden ──
+      // ── Connection: Input → Layer 1 ──
       ctx.beginPath();
       ctx.moveTo(centerX, inputY - 20 - nodeRadius);
-      ctx.lineTo(centerX, hiddenY + nodeRadius + 5);
+      ctx.lineTo(centerX, layerYs[0] + nodeRadius * 2 + 5);
       ctx.strokeStyle = `rgba(0, 229, 255, ${alpha * 0.4})`;
       ctx.lineWidth = isHighlighted ? 2 : 1;
       ctx.stroke();
 
       // Arrow
-      RNNTrainer._drawArrow(ctx, centerX, hiddenY + nodeRadius + 5, 'up', `rgba(0, 229, 255, ${alpha * 0.4})`);
+      RNNTrainer._drawArrow(ctx, centerX, layerYs[0] + nodeRadius * 2 + 5, 'up', `rgba(0, 229, 255, ${alpha * 0.4})`);
 
-      // ── Hidden node (RNN Cell) ──
+      // ── Draw Layers ──
       const cellW = Math.min(nodeRadius * 3, stepWidth * 0.5);
-      const cellH = nodeRadius * 2;
-
-      // Cell background
-      ctx.beginPath();
-      const rx = centerX - cellW / 2;
-      const ry = hiddenY - cellH / 2;
+      const cellH = nodeRadius * 2.5;
       const cornerR = 8;
-      ctx.moveTo(rx + cornerR, ry);
-      ctx.lineTo(rx + cellW - cornerR, ry);
-      ctx.quadraticCurveTo(rx + cellW, ry, rx + cellW, ry + cornerR);
-      ctx.lineTo(rx + cellW, ry + cellH - cornerR);
-      ctx.quadraticCurveTo(rx + cellW, ry + cellH, rx + cellW - cornerR, ry + cellH);
-      ctx.lineTo(rx + cornerR, ry + cellH);
-      ctx.quadraticCurveTo(rx, ry + cellH, rx, ry + cellH - cornerR);
-      ctx.lineTo(rx, ry + cornerR);
-      ctx.quadraticCurveTo(rx, ry, rx + cornerR, ry);
-      ctx.closePath();
+      
+      const layerStates = [];
+      if (states && states.hiddens) layerStates.push(states.hiddens);
+      if (states && states.hiddens2) layerStates.push(states.hiddens2);
 
-      const cellColor = isHighlighted ? 'rgba(108, 99, 255, 0.3)' : 'rgba(108, 99, 255, 0.12)';
-      ctx.fillStyle = cellColor;
-      ctx.fill();
-      ctx.strokeStyle = `rgba(108, 99, 255, ${alpha})`;
-      ctx.lineWidth = isHighlighted ? 2.5 : 1.5;
-      ctx.stroke();
+      for (let l = 0; l < numLayers; l++) {
+        const lY = layerYs[l];
+        
+        // Connection L1 -> L2
+        if (l > 0) {
+          ctx.beginPath();
+          ctx.moveTo(centerX, layerYs[l-1] - cellH / 2 - 5);
+          ctx.lineTo(centerX, lY + cellH / 2 + 5);
+          ctx.strokeStyle = `rgba(0, 229, 255, ${alpha * 0.4})`;
+          ctx.lineWidth = isHighlighted ? 2 : 1;
+          ctx.stroke();
+          RNNTrainer._drawArrow(ctx, centerX, lY + cellH / 2 + 5, 'up', `rgba(0, 229, 255, ${alpha * 0.4})`);
+        }
 
-      // Cell type label
-      ctx.fillStyle = `rgba(108, 99, 255, ${alpha})`;
-      ctx.font = `bold ${Math.min(12, cellW * 0.2)}px JetBrains Mono`;
-      const cellLabel = cellType === 'lstm' ? 'LSTM' : cellType === 'gru' ? 'GRU' : 'tanh';
-      ctx.fillText(cellLabel, centerX, hiddenY + 1);
+        // Cell background
+        ctx.beginPath();
+        const rx = centerX - cellW / 2;
+        const ry = lY - cellH / 2;
+        ctx.moveTo(rx + cornerR, ry);
+        ctx.lineTo(rx + cellW - cornerR, ry);
+        ctx.quadraticCurveTo(rx + cellW, ry, rx + cellW, ry + cornerR);
+        ctx.lineTo(rx + cellW, ry + cellH - cornerR);
+        ctx.quadraticCurveTo(rx + cellW, ry + cellH, rx + cellW - cornerR, ry + cellH);
+        ctx.lineTo(rx + cornerR, ry + cellH);
+        ctx.quadraticCurveTo(rx, ry + cellH, rx, ry + cellH - cornerR);
+        ctx.lineTo(rx, ry + cornerR);
+        ctx.quadraticCurveTo(rx, ry, rx + cornerR, ry);
+        ctx.closePath();
 
-      // Hidden state label
-      ctx.fillStyle = `rgba(255,255,255,${alpha * 0.4})`;
-      ctx.font = '9px JetBrains Mono';
-      ctx.fillText(`h${t}`, centerX, hiddenY + cellH / 2 + 14);
+        const cellColor = isHighlighted ? 'rgba(108, 99, 255, 0.25)' : 'rgba(108, 99, 255, 0.1)';
+        ctx.fillStyle = cellColor;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(108, 99, 255, ${alpha})`;
+        ctx.lineWidth = isHighlighted ? 2 : 1.5;
+        ctx.stroke();
 
-      // Hidden value
-      if (states && states.hiddens[t + 1]) {
-        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.35})`;
+        // Draw internal nodes (up to 3)
+        const displayNodes = Math.min(hiddenUnits, 3);
+        const nodeSpacing = (cellW - 10) / Math.max(1, displayNodes - 1);
+        const startNx = displayNodes === 1 ? centerX : centerX - (cellW - 15) / 2;
+        
+        for (let n = 0; n < displayNodes; n++) {
+          const nx = displayNodes === 1 ? startNx : startNx + n * nodeSpacing;
+          ctx.beginPath();
+          ctx.arc(nx, lY + 3, innerNodeR, 0, Math.PI * 2);
+          ctx.fillStyle = isHighlighted ? 'rgba(108, 99, 255, 0.6)' : 'rgba(108, 99, 255, 0.3)';
+          ctx.fill();
+          ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+        if (hiddenUnits > 3) {
+           ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+           ctx.font = '8px Arial';
+           ctx.fillText('...', centerX, lY + cellH/2 - 2);
+        }
+
+        // Cell type label
+        ctx.fillStyle = `rgba(108, 99, 255, ${alpha})`;
+        ctx.font = `bold ${Math.min(10, cellW * 0.2)}px JetBrains Mono`;
+        const cellLabel = cellType === 'lstm' ? 'LSTM' : cellType === 'gru' ? 'GRU' : 'tanh';
+        ctx.fillText(`L${l+1}`, centerX, lY - cellH / 2 + 10);
+        
+        // Hidden state label
+        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.5})`;
         ctx.font = '8px JetBrains Mono';
-        const hVal = states.hiddens[t + 1].slice(0, 3).map(v => v.toFixed(2)).join(',');
-        ctx.fillText(hVal + (hiddenUnits > 3 ? '..' : ''), centerX, hiddenY + cellH / 2 + 24);
+        
+        // Hidden value
+        if (layerStates[l] && layerStates[l][t + 1]) {
+          ctx.fillStyle = `rgba(255,255,255,${alpha * 0.4})`;
+          const hVal = layerStates[l][t + 1].slice(0, 2).map(v => v.toFixed(1)).join(',');
+          ctx.fillText(`[${hVal}${hiddenUnits > 2 ? '..' : ''}]`, centerX, lY + cellH / 2 + 12);
+        }
+        
+        // ── Recurrent connection: h_{t-1} → h_t ──
+        if (t > 0) {
+          const prevCenterX = pad.left + stepWidth * (t - 1) + stepWidth / 2;
+          const startX = prevCenterX + cellW / 2 + 2;
+          const endX = centerX - cellW / 2 - 2;
+          const arrowY = lY;
+  
+          ctx.beginPath();
+          ctx.moveTo(startX, arrowY);
+          ctx.lineTo(endX - 8, arrowY);
+          ctx.strokeStyle = `rgba(224, 64, 251, ${alpha * 0.7})`;
+          ctx.lineWidth = isHighlighted ? 2.5 : 1.5;
+          ctx.setLineDash([]);
+          ctx.stroke();
+  
+          RNNTrainer._drawArrow(ctx, endX - 4, arrowY, 'left', `rgba(224, 64, 251, ${alpha * 0.7})`);
+  
+          if (l === 0) {
+            ctx.fillStyle = `rgba(224, 64, 251, ${alpha * 0.6})`;
+            ctx.font = '9px JetBrains Mono';
+            ctx.fillText(`h${t - 1}→`, (startX + endX) / 2, arrowY - 8);
+          }
+        }
+  
+        // ── Self-loop for first cell ──
+        if (t === 0) {
+          const loopX = centerX - cellW / 2 - 15;
+          ctx.beginPath();
+          ctx.arc(loopX, lY, 12, -Math.PI * 0.3, Math.PI * 0.3);
+          ctx.strokeStyle = `rgba(224, 64, 251, ${alpha * 0.4})`;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([3, 3]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+  
+          ctx.fillStyle = `rgba(224, 64, 251, ${alpha * 0.4})`;
+          ctx.font = '8px JetBrains Mono';
+          ctx.fillText('h₀=0', loopX - 10, lY - 16);
+        }
       }
 
-      // ── Connection: Hidden → Output ──
+      // ── Connection: Top Layer → Output ──
+      const topLayerY = layerYs[numLayers - 1];
       const drawOutput = config.outputMode !== 'many-to-one' || t === T - 1;
       
       if (drawOutput) {
         ctx.beginPath();
-        ctx.moveTo(centerX, hiddenY - cellH / 2 - 5);
+        ctx.moveTo(centerX, topLayerY - cellH / 2 - 5);
         ctx.lineTo(centerX, outputY + nodeRadius + 5);
         ctx.strokeStyle = `rgba(0, 230, 118, ${alpha * 0.4})`;
         ctx.lineWidth = isHighlighted ? 2 : 1;
@@ -574,47 +716,6 @@ class RNNTrainer {
           ctx.fillText(oVal.length > 8 ? oVal.substring(0, 8) + '..' : oVal, centerX, outputY - nodeRadius - 6);
         }
       }
-
-      // ── Recurrent connection: h_{t-1} → h_t ──
-      if (t > 0) {
-        const prevCenterX = pad.left + stepWidth * (t - 1) + stepWidth / 2;
-        const startX = prevCenterX + cellW / 2 + 2;
-        const endX = centerX - cellW / 2 - 2;
-        const arrowY = hiddenY;
-
-        // Curved arrow for recurrent connection
-        ctx.beginPath();
-        ctx.moveTo(startX, arrowY);
-        ctx.lineTo(endX - 8, arrowY);
-        ctx.strokeStyle = `rgba(224, 64, 251, ${alpha * 0.7})`;
-        ctx.lineWidth = isHighlighted ? 2.5 : 1.5;
-        ctx.setLineDash([]);
-        ctx.stroke();
-
-        // Arrow head
-        RNNTrainer._drawArrow(ctx, endX - 4, arrowY, 'left', `rgba(224, 64, 251, ${alpha * 0.7})`);
-
-        // Label h_{t-1}
-        ctx.fillStyle = `rgba(224, 64, 251, ${alpha * 0.6})`;
-        ctx.font = '9px JetBrains Mono';
-        ctx.fillText(`h${t - 1}→`, (startX + endX) / 2, arrowY - 8);
-      }
-
-      // ── Self-loop for first cell ──
-      if (t === 0) {
-        const loopX = centerX - cellW / 2 - 15;
-        ctx.beginPath();
-        ctx.arc(loopX, hiddenY, 12, -Math.PI * 0.3, Math.PI * 0.3);
-        ctx.strokeStyle = `rgba(224, 64, 251, ${alpha * 0.4})`;
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([3, 3]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.fillStyle = `rgba(224, 64, 251, ${alpha * 0.4})`;
-        ctx.font = '8px JetBrains Mono';
-        ctx.fillText('h₀=0', loopX - 10, hiddenY - 16);
-      }
     }
 
     // ── Shared weights label ──
@@ -628,7 +729,9 @@ class RNNTrainer {
     ctx.font = 'bold 12px Cairo, sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText('المخرجات', pad.left - 10, outputY + 4);
-    ctx.fillText('الحالة المخفية', pad.left - 10, hiddenY + 4);
+    for (let l = 0; l < numLayers; l++) {
+      ctx.fillText(`الطبقة ${l+1}`, pad.left - 10, layerYs[l] + 4);
+    }
     ctx.fillText('المدخلات', pad.left - 10, inputY - 16);
   }
 
