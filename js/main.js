@@ -65,7 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // 8. RNN Simulator Initialization
   initRNNSimulator();
 
-  // 9. Concept Cards Interactive Visualizations
+  // 9. Transformer Simulator Initialization
+  if (typeof initTransformerSimulator === 'function') {
+    initTransformerSimulator();
+  }
+
+  // 10. Concept Cards Interactive Visualizations
   if (typeof ConceptCards !== 'undefined') {
     ConceptCards.init();
   }
