@@ -70,7 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initTransformerSimulator();
   }
 
-  // 10. Concept Cards Interactive Visualizations
+  // 10. GAN Simulator Initialization
+  if (typeof initGANSimulator === 'function') {
+    initGANSimulator();
+  }
+
+  // 11. Concept Cards Interactive Visualizations
   if (typeof ConceptCards !== 'undefined') {
     ConceptCards.init();
   }

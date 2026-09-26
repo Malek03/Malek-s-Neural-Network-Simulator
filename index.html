@@ -13,6 +13,7 @@
     <!-- CSS -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/transformer.css">
+    <link rel="stylesheet" href="css/gan.css">
 </head>
 <body>
 
@@ -391,15 +392,15 @@
             </div>
             
             <!-- GAN -->
-            <div class="network-card locked">
+            <div class="network-card" id="gan-card">
                 <div class="card-icon gan">
                     <i class="fas fa-magic"></i>
                 </div>
                 <h3 class="card-title">الشبكات التوليدية التنافسية</h3>
                 <div class="card-subtitle">Generative Adversarial Networks</div>
-                <p class="card-desc">تتكون من شبكتين (مولد ومميز) تتنافسان لتوليد بيانات جديدة وواقعية مثل الصور والصوت.</p>
-                <div class="card-status coming-soon">
-                    <i class="fas fa-lock"></i> قريباً
+                <p class="card-desc">تتكون من شبكتين (مولد ومميز) تتنافسان لتوليد بيانات جديدة وواقعية مثل الصور والصوت. ابنِ وتدرّب على GAN خطوة بخطوة!</p>
+                <div class="card-status available">
+                    <i class="fas fa-check-circle"></i> متاح للمحاكاة
                 </div>
             </div>
         </div>
@@ -1677,6 +1678,272 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
+    <!-- GAN SIMULATOR OVERLAY -->
+    <!-- ========================================== -->
+    <div class="simulator-overlay" id="gan-simulator-overlay">
+        <div class="simulator-container">
+            <!-- Header -->
+            <div class="simulator-header">
+                <div class="simulator-title" style="color: #FF5252;">
+                    <i class="fas fa-magic"></i> 
+                    محاكي الشبكات التوليدية التنافسية (GAN) - Eng:Malek Almosanif
+                </div>
+                <button class="simulator-close" id="gan-close-sim"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <!-- Body -->
+            <div class="simulator-body" style="padding: 0;">
+                
+                <!-- GAN Layout -->
+                <div class="gan-layout">
+                    <!-- Right Sidebar (Tabs) -->
+                    <div class="gan-sidebar">
+                        <div class="gan-nav-tab active" data-tab="gan-overview">
+                            <div class="gan-tab-icon"><i class="fas fa-network-wired"></i></div>
+                            <div class="gan-tab-text">البنية الكاملة</div>
+                        </div>
+                        <div class="gan-nav-tab" data-tab="gan-generator">
+                            <div class="gan-tab-icon"><i class="fas fa-magic"></i></div>
+                            <div class="gan-tab-text">المولد (Generator)</div>
+                        </div>
+                        <div class="gan-nav-tab" data-tab="gan-discriminator">
+                            <div class="gan-tab-icon"><i class="fas fa-search"></i></div>
+                            <div class="gan-tab-text">المميز (Discriminator)</div>
+                        </div>
+                        <div class="gan-nav-tab" data-tab="gan-loss">
+                            <div class="gan-tab-icon"><i class="fas fa-calculator"></i></div>
+                            <div class="gan-tab-text">دوال الخسارة</div>
+                        </div>
+                        <div class="gan-nav-tab" data-tab="gan-training">
+                            <div class="gan-tab-icon"><i class="fas fa-play"></i></div>
+                            <div class="gan-tab-text">التدريب التفاعلي</div>
+                        </div>
+                        <div class="gan-nav-tab" data-tab="gan-applications">
+                            <div class="gan-tab-icon"><i class="fas fa-rocket"></i></div>
+                            <div class="gan-tab-text">التطبيقات والأنواع</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Main Content Area -->
+                    <div class="gan-main">
+                        <!-- Overview Tab -->
+                        <div class="gan-tab-content active" id="gan-overview-tab">
+                            <div class="gan-content-header">
+                                <h2>نظرة شاملة على بنية GAN</h2>
+                                <p>كيف يعمل المولد والمميز معاً؟ انقر على أي مكون لمعرفة تفاصيله.</p>
+                            </div>
+                            <div class="gan-overview-architecture">
+                                <!-- Generator Side -->
+                                <div class="gan-arch-col gan-generator-col">
+                                    <div class="gan-arch-title">المولد (Generator)</div>
+                                    
+                                    <div class="gan-arch-block gan-arch-noise" data-tab="gan-generator">
+                                        <i class="fas fa-random"></i> Noise Vector (z)
+                                    </div>
+                                    
+                                    <div class="gan-arch-arrow"><i class="fas fa-arrow-down"></i></div>
+                                    
+                                    <div class="gan-arch-block gan-arch-gen-layer" data-tab="gan-generator">
+                                        <i class="fas fa-layer-group"></i> Dense + Reshape
+                                    </div>
+                                    
+                                    <div class="gan-arch-arrow"><i class="fas fa-arrow-down"></i></div>
+                                    
+                                    <div class="gan-arch-block gan-arch-gen-layer" data-tab="gan-generator">
+                                        <i class="fas fa-expand"></i> TransConv2D + BatchNorm + ReLU
+                                    </div>
+                                    
+                                    <div class="gan-arch-arrow"><i class="fas fa-arrow-down"></i></div>
+                                    
+                                    <div class="gan-arch-block gan-arch-gen-layer" data-tab="gan-generator">
+                                        <i class="fas fa-expand"></i> TransConv2D + BatchNorm + ReLU
+                                    </div>
+                                    
+                                    <div class="gan-arch-arrow"><i class="fas fa-arrow-down"></i></div>
+                                    
+                                    <div class="gan-arch-block gan-arch-gen-output" data-tab="gan-generator">
+                                        <i class="fas fa-image"></i> TransConv2D + Tanh → صورة مزيفة
+                                    </div>
+                                </div>
+                                
+                                <!-- VS Badge -->
+                                <div class="gan-arch-vs">
+                                    <div class="gan-arch-vs-badge">VS</div>
+                                    <div class="gan-arch-flow-arrow"></div>
+                                </div>
+                                
+                                <!-- Discriminator Side -->
+                                <div class="gan-arch-col gan-discriminator-col">
+                                    <div class="gan-arch-title">المميز (Discriminator)</div>
+                                    
+                                    <div class="gan-arch-block gan-arch-disc-input" data-tab="gan-discriminator">
+                                        <i class="fas fa-image"></i> صورة (حقيقية / مزيفة)
+                                    </div>
+                                    
+                                    <div class="gan-arch-arrow"><i class="fas fa-arrow-down"></i></div>
+                                    
+                                    <div class="gan-arch-block gan-arch-disc-layer" data-tab="gan-discriminator">
+                                        <i class="fas fa-compress"></i> Conv2D + LeakyReLU
+                                    </div>
+                                    
+                                    <div class="gan-arch-arrow"><i class="fas fa-arrow-down"></i></div>
+                                    
+                                    <div class="gan-arch-block gan-arch-disc-layer" data-tab="gan-discriminator">
+                                        <i class="fas fa-compress"></i> Conv2D + BatchNorm + LeakyReLU
+                                    </div>
+                                    
+                                    <div class="gan-arch-arrow"><i class="fas fa-arrow-down"></i></div>
+                                    
+                                    <div class="gan-arch-block gan-arch-disc-layer" data-tab="gan-discriminator">
+                                        <i class="fas fa-stream"></i> Flatten + Dense
+                                    </div>
+                                    
+                                    <div class="gan-arch-arrow"><i class="fas fa-arrow-down"></i></div>
+                                    
+                                    <div class="gan-arch-block gan-arch-disc-output" data-tab="gan-discriminator">
+                                        <i class="fas fa-check-circle"></i> Sigmoid → حقيقي/مزيف [0,1]
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Generator Tab -->
+                        <div class="gan-tab-content" id="gan-generator-tab">
+                            <div class="gan-step-container">
+                                <div id="gan-generator-content"></div>
+                                <div class="gan-step-controls">
+                                    <button class="btn btn-secondary" id="gan-gen-reset"><i class="fas fa-undo"></i> إعادة</button>
+                                    <div class="gan-step-indicator" id="gan-gen-step">1/5</div>
+                                    <div class="gan-btn-group">
+                                        <button class="btn btn-secondary" id="gan-gen-prev"><i class="fas fa-chevron-right"></i> السابق</button>
+                                        <button class="btn btn-primary" id="gan-gen-next">التالي <i class="fas fa-chevron-left"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Discriminator Tab -->
+                        <div class="gan-tab-content" id="gan-discriminator-tab">
+                            <div class="gan-step-container">
+                                <div id="gan-discriminator-content"></div>
+                                <div class="gan-step-controls">
+                                    <button class="btn btn-secondary" id="gan-disc-reset"><i class="fas fa-undo"></i> إعادة</button>
+                                    <div class="gan-step-indicator" id="gan-disc-step">1/5</div>
+                                    <div class="gan-btn-group">
+                                        <button class="btn btn-secondary" id="gan-disc-prev"><i class="fas fa-chevron-right"></i> السابق</button>
+                                        <button class="btn btn-primary" id="gan-disc-next">التالي <i class="fas fa-chevron-left"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loss Functions Tab -->
+                        <div class="gan-tab-content" id="gan-loss-tab">
+                            <div class="gan-step-container">
+                                <div id="gan-loss-content"></div>
+                                <div class="gan-step-controls">
+                                    <button class="btn btn-secondary" id="gan-loss-reset"><i class="fas fa-undo"></i> إعادة</button>
+                                    <div class="gan-step-indicator" id="gan-loss-step">1/4</div>
+                                    <div class="gan-btn-group">
+                                        <button class="btn btn-secondary" id="gan-loss-prev"><i class="fas fa-chevron-right"></i> السابق</button>
+                                        <button class="btn btn-primary" id="gan-loss-next">التالي <i class="fas fa-chevron-left"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Training Tab -->
+                        <div class="gan-tab-content" id="gan-training-tab">
+                            <div class="gan-step-container">
+                                <div class="gan-content-header" style="margin: -1.5rem -1.5rem 1rem; padding: 1rem;">
+                                    <h2>تدريب GAN التفاعلي</h2>
+                                    <p>شاهد المولد والمميز يتنافسان في الوقت الحقيقي!</p>
+                                </div>
+                                
+                                <!-- Training Controls -->
+                                <div class="gan-training-controls">
+                                    <button class="btn btn-primary btn-sm" id="gan-train-btn">
+                                        <i class="fas fa-play"></i> بدء التدريب
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" id="gan-stop-btn" disabled>
+                                        <i class="fas fa-stop"></i> إيقاف
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" id="gan-reset-btn">
+                                        <i class="fas fa-redo"></i> إعادة تهيئة
+                                    </button>
+                                    <div style="flex:1;"></div>
+                                    <div class="gan-slider-group" style="min-width: 180px; margin-bottom: 0;">
+                                        <div class="gan-slider-label">
+                                            <span>Learning Rate</span>
+                                            <span class="value" id="gan-lr-val">0.010</span>
+                                        </div>
+                                        <input type="range" class="gan-slider" id="gan-lr-slider" min="0.001" max="0.1" step="0.001" value="0.01">
+                                    </div>
+                                </div>
+                                
+                                <!-- Training Stats -->
+                                <div class="gan-training-stats">
+                                    <div class="gan-stat-card">
+                                        <div class="gan-stat-label">Epoch</div>
+                                        <div class="gan-stat-value epoch" id="gan-epoch-val">0/200</div>
+                                    </div>
+                                    <div class="gan-stat-card">
+                                        <div class="gan-stat-label">Generator Loss</div>
+                                        <div class="gan-stat-value gen" id="gan-gloss-val">—</div>
+                                    </div>
+                                    <div class="gan-stat-card">
+                                        <div class="gan-stat-label">Discriminator Loss</div>
+                                        <div class="gan-stat-value disc" id="gan-dloss-val">—</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Progress Bar -->
+                                <div class="comp-progress-bar" style="height: 4px; margin-bottom: 1rem;">
+                                    <div class="comp-progress-fill" id="gan-train-progress" style="width: 0%; background: linear-gradient(135deg, #FF5252, #FF6584);"></div>
+                                </div>
+                                
+                                <!-- Loss Chart -->
+                                <div class="gan-loss-chart-container">
+                                    <canvas id="gan-loss-chart"></canvas>
+                                </div>
+                                <div class="gan-loss-legend">
+                                    <span><div class="gen-dot"></div> Generator Loss</span>
+                                    <span><div class="disc-dot"></div> Discriminator Loss</span>
+                                </div>
+                                
+                                <!-- Generated Images Gallery -->
+                                <h3 style="color: #4ECDC4; margin: 1rem 0 0.5rem; font-size: 1rem;">
+                                    <i class="fas fa-th"></i> الصور المولدة (Generator Output)
+                                </h3>
+                                <div class="gan-gallery" id="gan-training-gallery" style="grid-template-columns: repeat(8, 1fr);">
+                                    <p style="grid-column: 1/-1; text-align:center; color: #888; padding: 2rem;">اضغط "بدء التدريب" لمشاهدة النتائج</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Applications Tab -->
+                        <div class="gan-tab-content" id="gan-applications-tab">
+                            <div class="gan-step-container">
+                                <div id="gan-applications-content"></div>
+                                <div class="gan-step-controls">
+                                    <button class="btn btn-secondary" id="gan-app-reset"><i class="fas fa-undo"></i> إعادة</button>
+                                    <div class="gan-step-indicator" id="gan-app-step">1/4</div>
+                                    <div class="gan-btn-group">
+                                        <button class="btn btn-secondary" id="gan-app-prev"><i class="fas fa-chevron-right"></i> السابق</button>
+                                        <button class="btn btn-primary" id="gan-app-next">التالي <i class="fas fa-chevron-left"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
 
     <script src="js/math-utils.js"></script>
@@ -1694,6 +1961,7 @@
     <script src="js/rnn-builder.js"></script>
     <script src="js/rnn-training.js"></script>
     <script src="js/transformer-simulator.js"></script>
+    <script src="js/gan-simulator.js"></script>
     <script src="js/concepts-interactive.js"></script>
     <script src="js/main.js"></script>
 </body>

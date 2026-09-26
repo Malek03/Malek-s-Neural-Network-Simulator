@@ -1,0 +1,639 @@
+/* =========================================
+   GAN SIMULATOR - ALL STYLES
+   ========================================= */
+
+/* --- Layout --- */
+.gan-layout {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: calc(100vh - 70px);
+  background: #0a0e27;
+  direction: rtl;
+}
+
+.gan-sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: rgba(15, 20, 45, 0.95);
+  border-left: 1px solid rgba(255, 82, 82, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.gan-nav-tab {
+  display: flex;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.3s ease;
+  color: rgba(255,255,255,0.5);
+  gap: 0.7rem;
+  font-size: 0.9rem;
+}
+.gan-nav-tab:hover {
+  background: rgba(255, 82, 82, 0.08);
+  color: rgba(255,255,255,0.8);
+}
+.gan-nav-tab.active {
+  background: rgba(255, 82, 82, 0.15);
+  color: #FF5252;
+  border-right: 3px solid #FF5252;
+  font-weight: 600;
+}
+
+.gan-tab-icon { width: 28px; text-align: center; font-size: 1.1rem; flex-shrink: 0; }
+.gan-tab-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.gan-main {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #0a0e27;
+  direction: rtl;
+}
+
+/* --- Tab Content --- */
+.gan-tab-content {
+  display: none;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overflow-y: auto;
+  direction: rtl;
+}
+.gan-tab-content.active {
+  display: block;
+}
+
+/* --- Content Header --- */
+.gan-content-header {
+  padding: 1.5rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: rgba(0,0,0,0.3);
+}
+.gan-content-header h2 {
+  color: #FF5252;
+  margin-bottom: 0.5rem;
+  font-size: 1.4rem;
+}
+.gan-content-header p {
+  color: #888;
+  font-size: 0.95rem;
+}
+
+/* --- Step Containers & Controls --- */
+.gan-step-container {
+  padding: 1.5rem;
+}
+.gan-step-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-top: 1rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.gan-step-indicator {
+  font-family: 'JetBrains Mono', monospace;
+  color: #FF5252;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.gan-btn-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* --- Architecture Overview --- */
+.gan-overview-architecture {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.gan-arch-col {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.gan-arch-title {
+  font-weight: 700;
+  font-size: 1.2rem;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.gan-generator-col .gan-arch-title {
+  color: #4ECDC4;
+  background: rgba(78, 205, 196, 0.1);
+  border: 1px solid rgba(78, 205, 196, 0.3);
+}
+
+.gan-discriminator-col .gan-arch-title {
+  color: #FF6584;
+  background: rgba(255, 101, 132, 0.1);
+  border: 1px solid rgba(255, 101, 132, 0.3);
+}
+
+.gan-arch-block {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #ccc;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.gan-arch-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+.gan-arch-block i {
+  font-size: 1rem;
+}
+
+/* Block variants */
+.gan-arch-noise {
+  border-color: rgba(255, 214, 0, 0.3);
+  color: #FFD93D;
+}
+.gan-arch-noise:hover {
+  background: rgba(255, 214, 0, 0.1);
+}
+
+.gan-arch-gen-layer {
+  border-color: rgba(78, 205, 196, 0.3);
+  color: #4ECDC4;
+}
+.gan-arch-gen-layer:hover {
+  background: rgba(78, 205, 196, 0.1);
+}
+
+.gan-arch-gen-output {
+  border-color: rgba(69, 183, 209, 0.3);
+  color: #45B7D1;
+}
+.gan-arch-gen-output:hover {
+  background: rgba(69, 183, 209, 0.1);
+}
+
+.gan-arch-disc-input {
+  border-color: rgba(255, 138, 92, 0.3);
+  color: #FF8A5C;
+}
+.gan-arch-disc-input:hover {
+  background: rgba(255, 138, 92, 0.1);
+}
+
+.gan-arch-disc-layer {
+  border-color: rgba(255, 101, 132, 0.3);
+  color: #FF6584;
+}
+.gan-arch-disc-layer:hover {
+  background: rgba(255, 101, 132, 0.1);
+}
+
+.gan-arch-disc-output {
+  border-color: rgba(255, 82, 82, 0.3);
+  color: #FF5252;
+}
+.gan-arch-disc-output:hover {
+  background: rgba(255, 82, 82, 0.1);
+}
+
+.gan-arch-arrow {
+  font-size: 1.5rem;
+  color: rgba(255,255,255,0.3);
+  padding: 0.3rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gan-arch-vs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 0;
+}
+
+.gan-arch-vs-badge {
+  background: rgba(255, 82, 82, 0.15);
+  border: 1px solid rgba(255, 82, 82, 0.3);
+  color: #FF5252;
+  font-weight: 800;
+  font-size: 1.5rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(255, 82, 82, 0.2);
+}
+
+.gan-arch-flow-arrow {
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, #4ECDC4, #FF6584);
+  position: relative;
+  margin: 0 auto;
+}
+.gan-arch-flow-arrow::after {
+  content: '→';
+  position: absolute;
+  right: -10px;
+  top: -12px;
+  color: #FF6584;
+  font-size: 1.2rem;
+}
+
+/* --- Info Cards in Steps --- */
+.gan-info-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+.gan-info-card h3 {
+  color: #FF5252;
+  font-size: 1.1rem;
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.gan-info-card p {
+  color: #aaa;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+.gan-info-card.generator-card {
+  border-color: rgba(78, 205, 196, 0.2);
+}
+.gan-info-card.generator-card h3 {
+  color: #4ECDC4;
+}
+.gan-info-card.discriminator-card {
+  border-color: rgba(255, 101, 132, 0.2);
+}
+.gan-info-card.discriminator-card h3 {
+  color: #FF6584;
+}
+
+/* --- Canvas Containers --- */
+.gan-canvas-container {
+  position: relative;
+  width: 100%;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.gan-canvas-container canvas {
+  display: block;
+  width: 100%;
+}
+
+/* --- Grid Gallery (for generated images) --- */
+.gan-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 8px;
+  padding: 1rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 1rem;
+}
+.gan-gallery-item {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,0.1);
+  transition: all 0.3s;
+}
+.gan-gallery-item:hover {
+  border-color: #FF5252;
+  transform: scale(1.05);
+}
+.gan-gallery-item canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Training Controls --- */
+.gan-training-controls {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 1rem;
+}
+
+.gan-training-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.gan-stat-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+}
+.gan-stat-label {
+  color: #888;
+  font-size: 0.8rem;
+  margin-bottom: 0.3rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.gan-stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+.gan-stat-value.gen { color: #4ECDC4; }
+.gan-stat-value.disc { color: #FF6584; }
+.gan-stat-value.epoch { color: #FFD93D; }
+
+/* --- Loss Chart --- */
+.gan-loss-chart-container {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.gan-loss-chart-container canvas {
+  width: 100%;
+  height: 100%;
+}
+.gan-loss-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 0.5rem;
+}
+.gan-loss-legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.gan-loss-legend .gen-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4ECDC4;
+}
+.gan-loss-legend .disc-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #FF6584;
+}
+
+/* --- Formula Display --- */
+.gan-formula {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 1.2rem 1.5rem;
+  margin: 1rem 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  color: #FFD93D;
+  text-align: center;
+  direction: ltr;
+  overflow-x: auto;
+}
+.gan-formula .formula-label {
+  color: #888;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  direction: rtl;
+}
+
+/* --- Process Flow --- */
+.gan-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 1rem 0;
+}
+.gan-flow-step {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1.5rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  width: 100%;
+  max-width: 500px;
+  transition: all 0.3s;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+.gan-flow-step.active {
+  border-color: #FF5252;
+  background: rgba(255, 82, 82, 0.08);
+  color: #fff;
+}
+.gan-flow-step .step-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255,82,82,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #FF5252;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.gan-flow-arrow-down {
+  color: rgba(255,255,255,0.2);
+  font-size: 1.2rem;
+}
+
+/* --- Noise Visualization --- */
+.gan-noise-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  padding: 1rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+  max-width: 350px;
+  margin: 1rem auto;
+}
+.gan-noise-cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  transition: background 0.3s;
+}
+
+/* --- Comparison View --- */
+.gan-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.gan-compare-side {
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 1rem;
+  text-align: center;
+}
+.gan-compare-side h4 {
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+}
+.gan-compare-side.real h4 {
+  color: #4ECDC4;
+}
+.gan-compare-side.fake h4 {
+  color: #FF6584;
+}
+
+/* --- Interactive Controls --- */
+.gan-slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.gan-slider-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #888;
+  font-family: 'JetBrains Mono', monospace;
+}
+.gan-slider-label .value {
+  color: #FF5252;
+  font-weight: 600;
+}
+.gan-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.1);
+  outline: none;
+}
+.gan-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FF5252;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(255,82,82,0.4);
+}
+
+/* --- Highlight Boxes --- */
+.gan-highlight-box {
+  padding: 1rem 1.2rem;
+  border-radius: 10px;
+  margin: 0.8rem 0;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: #ccc;
+}
+.gan-highlight-box.tip {
+  background: rgba(78, 205, 196, 0.08);
+  border: 1px solid rgba(78, 205, 196, 0.2);
+}
+.gan-highlight-box.warning {
+  background: rgba(255, 214, 0, 0.08);
+  border: 1px solid rgba(255, 214, 0, 0.2);
+}
+.gan-highlight-box.info {
+  background: rgba(108, 99, 255, 0.08);
+  border: 1px solid rgba(108, 99, 255, 0.2);
+}
+
+/* --- Two Column Layout for Steps --- */
+.gan-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .gan-layout {
+    flex-direction: column;
+  }
+  .gan-sidebar {
+    width: 100%;
+    min-width: auto;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .gan-nav-tab {
+    flex-direction: column;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.7rem;
+    min-width: 80px;
+  }
+  .gan-overview-architecture {
+    flex-direction: column;
+    align-items: center;
+  }
+  .gan-two-col,
+  .gan-compare {
+    grid-template-columns: 1fr;
+  }
+}
